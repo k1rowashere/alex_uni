@@ -1,5 +1,7 @@
 * {
-    --nav-offset: 60px;
+    --nav-offset: 57.5px;
+    --vert-nav-offset: 74px;
+    background: inherit;
 }
 
 body {
@@ -7,8 +9,8 @@ body {
 }
 
 .vert_nav {
-    &:not(.vert_nav__open, :hover, :focus-within) .vert_nav__label {
-        // display: none;
+    // &:not(.vert_nav__open, :hover, :focus-within) .vert_nav__label {
+    &:not(.vert_nav__open) .vert_nav__label {
         width: 0;
     }
 }
@@ -20,24 +22,23 @@ body {
 
 table {
     border-width: 3px;
-}
 
-tr {
-    height: 3rem;
-    border-top-width: 2px;
-    border-bottom-width: 2px;
-}
+    thead tr {
+        border-bottom-width: 3px;
+    }
 
-td,
-th {
-    width: calc(100% / 13);
-    border: 1px solid;
-}
+    th {
+        width: min-content;
+        height: min-content;
+    }
 
-tr {
     td,
     th {
+        border: 1px solid;
         &:nth-of-type(2n):not(:last-of-type) {
+            border-right-width: 2px;
+        }
+        &:first-child {
             border-right-width: 3px;
         }
     }
