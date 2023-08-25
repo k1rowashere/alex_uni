@@ -174,13 +174,13 @@ fn timetable_from_subjects(subjects: Vec<Subject>) -> [[SubjectOption; 12]; 6] {
 }
 
 #[component]
-fn TimetableGridView(cx: Scope, table_data: Vec<Subject>) -> impl IntoView {
+fn TimetableGridView(table_data: Vec<Subject>) -> impl IntoView {
     let table_body = timetable_from_subjects(table_data)
         .iter()
         .enumerate()
         .map(|(i, row)| {
             // TODO: Remove unwrap
-            view! { cx,
+            view! {
                 <tr>
                     <th>{usize_to_short_day(i)}</th>
                     {
@@ -188,23 +188,23 @@ fn TimetableGridView(cx: Scope, table_data: Vec<Subject>) -> impl IntoView {
                         .iter()
                         .map(|s| {
                             match s {
-                                SubjectOption::None => view! { cx, <td></td> },
-                                SubjectOption::JoinMark => view! { cx, <td class="hidden"></td> },
+                                SubjectOption::None => view! { <><td/></> },
+                                SubjectOption::JoinMark => leptos::Fragment::new([].to_vec()),
                                 SubjectOption::Some(s) => {
                                     let colspan = s.period.1 - s.period.0 + 1;
-                                    view! { cx, <td colspan=colspan>{s.name.clone()}</td> }
+                                    view! { <><td colspan=colspan>{s.name.clone()}</td></> }
                                 }
                             }
                         })
-                        .collect_view(cx)
+                        .collect_view()
                     }
                 </tr>
             }
         })
-        .collect_view(cx);
+        .collect_view();
 
-    view! { cx,
-        <table>
+    view! {
+        <table class="w-full max-w-7xl mx-auto">
             <thead>
                 <tr>
                     <td class="w-[unset] h-[unset]"></td>
@@ -213,14 +213,14 @@ fn TimetableGridView(cx: Scope, table_data: Vec<Subject>) -> impl IntoView {
                         .iter()
                         .enumerate()
                         .map(|(i, &t)| {
-                            view! { cx,
+                            view! {
                                 <th>
                                     <span class="block">{i + 1}</span>
                                     <span>{t}</span>
                                 </th>
                             }
                         })
-                        .collect_view(cx)
+                        .collect_view()
                     }
                 </tr>
             </thead>
@@ -230,7 +230,7 @@ fn TimetableGridView(cx: Scope, table_data: Vec<Subject>) -> impl IntoView {
 }
 
 #[component]
-fn TimetableListView(cx: Scope, table_data: Vec<Subject>) -> impl IntoView {
+fn TimetableListView(table_data: Vec<Subject>) -> impl IntoView {
     // assumes the list is sorted by day_of_week, and then period
 
     let mut prev_day = DayOfWeek::Friday;
@@ -243,7 +243,7 @@ fn TimetableListView(cx: Scope, table_data: Vec<Subject>) -> impl IntoView {
                 .iter()
                 .take_while(|s| s.day_of_week == prev_day)
                 .count();
-            view! { cx,
+            view! {
                 <>
                     <th rowspan=rowspan>{s.day_of_week.to_string()}</th>
                 </>
@@ -256,7 +256,7 @@ fn TimetableListView(cx: Scope, table_data: Vec<Subject>) -> impl IntoView {
     let table_body = table_data
         .iter()
         .map(|s| {
-            view! { cx,
+            view! {
                 <tr>
                     {day_header(s)}
                     <td>
@@ -277,9 +277,9 @@ fn TimetableListView(cx: Scope, table_data: Vec<Subject>) -> impl IntoView {
                 </tr>
             }
         })
-        .collect_view(cx);
+        .collect_view();
 
-    view! {cx,
+    view! {
         <table class="w-full max-w-7xl mx-auto">
             <thead>
                 <th>"Day"</th>
@@ -291,42 +291,42 @@ fn TimetableListView(cx: Scope, table_data: Vec<Subject>) -> impl IntoView {
     }
 }
 
-#[derive(Clone)]
-enum View {
-    Grid,
-    List,
-}
-
 #[component]
-pub fn TimetablePage(cx: Scope) -> impl IntoView {
-    let table_data = create_resource(cx, || (), |_| async move { get_timetable_subjects().await });
+pub fn TimetablePage() -> impl IntoView {
+    #[derive(Clone)]
+    enum View {
+        Grid,
+        List,
+    }
 
-    let (view, set_view) = create_signal(cx, View::Grid);
+    let table_data = create_resource(|| (), |_| async move { get_timetable_subjects().await });
 
-    view! { cx,
-        // todo: add settings to timetable generation
+    let (view, set_view) = create_signal(View::Grid);
+
+    view! {
+        // TODO: add settings to timetable generation
         // - toggles for:
         // - period time visibility
         // - period time format (24h, 12h)
         // - toggle for subject info (prof, location)
-        // - multiple timetable layouts
-        // - list view
-        // - grid view (default)
+        // o multiple timetable layouts
+        // o list view
+        // o grid view (default)
         <h1 class="text-5xl">
             timetable
         </h1>
         <div class="w-auto overflow-x-auto pt-7">
-        // todo: add fancy loading
-            <Suspense fallback=move || view! { cx, <p>"loading"</p> }>
+        // TODO: add fancy loading
+            <Suspense fallback=move || view! { <p>"loading"</p> }>
                 {move || {
                     table_data
-                        .read(cx)
+                        .read()
                         // TODO: Remove unwrap
                         .map(|res| res.unwrap())
                         .map(|subjects| {
                             match view() {
-                                View::Grid => view!{cx, <TimetableGridView table_data=subjects/>},
-                                View::List => view!{cx, <TimetableListView table_data=subjects/>},
+                                View::Grid => view!{<TimetableGridView table_data=subjects/>},
+                                View::List => view!{<TimetableListView table_data=subjects/>},
                             }
                         })
                 }}
@@ -347,6 +347,7 @@ pub fn TimetablePage(cx: Scope) -> impl IntoView {
                 "List"
             </button>
         </div>
-        // form for settings
+        // TODO: store settings
+        // TODO: form for settings
     }
 }

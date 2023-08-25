@@ -7,14 +7,14 @@ use crate::navbar::{Navbar, VerticalNavbar};
 use crate::timetable::TimetablePage;
 
 #[component]
-pub fn App(cx: Scope) -> impl IntoView {
-    provide_meta_context(cx);
+pub fn App() -> impl IntoView {
+    provide_meta_context();
 
     // only runs on the client
     #[cfg(feature = "hydrate")]
     crate::theme::theme_event_listener();
 
-    view! { cx,
+    view! {
         <Stylesheet id="leptos" href="/pkg/uni_web.css"/>
         <Title text = "Alexandria University"/>
         // TODO: move to a seperate file
@@ -33,13 +33,13 @@ pub fn App(cx: Scope) -> impl IntoView {
         <Router>
                 <Routes>
                     <Route path= "/" view=MainWrapper>
-                        <Route path= ""                view=move |_cx| view!{_cx, "home"}/>
-                        <Route path= "email"           view=move |_cx| view!{_cx, "email"}/>
-                        <Route path= "registration"    view=move |_cx| view!{_cx, "registration"}/>
+                        <Route path= ""                view=move || view!{"home"}/>
+                        <Route path= "email"           view=move || view!{"email"}/>
+                        <Route path= "registration"    view=move || view!{"registration"}/>
                         <Route path= "timetable"       view=TimetablePage/>
-                        <Route path= "financial"       view=move |_cx| view!{_cx, "financial"}/>
-                        <Route path= "grades"          view=move |_cx| view!{_cx, "grades"}/>
-                        <Route path= "profile"         view=move |_cx| view!{_cx, "profile"}/>
+                        <Route path= "financial"       view=move || view!{"financial"}/>
+                        <Route path= "grades"          view=move || view!{"grades"}/>
+                        <Route path= "profile"         view=move || view!{"profile"}/>
                         <Route path= "/*any"           view=NotFound/>
                     </Route>
                 </Routes>
@@ -48,8 +48,8 @@ pub fn App(cx: Scope) -> impl IntoView {
 }
 
 #[component]
-fn MainWrapper(cx: Scope) -> impl IntoView {
-    view! { cx,
+fn MainWrapper() -> impl IntoView {
+    view! {
         <Navbar/>
         <main class="min-h-[calc(100vh-var(--nav-offset))] flex-grow grid md:grid-cols-[minmax(min-content,_max-content)_auto]">
             <VerticalNavbar/>
@@ -64,14 +64,14 @@ fn MainWrapper(cx: Scope) -> impl IntoView {
 }
 
 #[component]
-fn NotFound(cx: Scope) -> impl IntoView {
+fn NotFound() -> impl IntoView {
     #[cfg(feature = "ssr")]
     {
-        let resp = expect_context::<leptos_actix::ResponseOptions>(cx);
+        let resp = expect_context::<leptos_actix::ResponseOptions>();
         resp.set_status(actix_web::http::StatusCode::NOT_FOUND);
     }
 
-    view! { cx,
+    view! {
         <h1>"Not Found"</h1>
     }
 }

@@ -17,13 +17,12 @@ pub(crate) fn focus_within(e: FocusEvent) -> bool {
 
 #[component]
 pub(crate) fn Dropdown<F, IV>(
-    cx: Scope,
     #[prop(default = String::new(), into)] class: String,
     button: F,
     children: ChildrenFn,
 ) -> impl IntoView
 where
-    F: Fn(Scope) -> IV + 'static,
+    F: Fn() -> IV + 'static,
     IV: IntoView,
 {
     const DROPDOWN_CLASS: &str = "absolute top-10 right-0 z-50 min-w-[10em] max-w-[20em] \
@@ -34,8 +33,8 @@ where
                                 dark:text-gray-400 dark:hover:text-white dark:focus:text-white \
                                 text-xl rounded-md";
 
-    let (visible, set_visible) = create_signal(cx, false);
-    let list_ref = create_node_ref::<Ul>(cx);
+    let (visible, set_visible) = create_signal(false);
+    let list_ref = create_node_ref::<Ul>();
 
     let open_menu = move |_| {
         set_visible(true);
@@ -60,27 +59,29 @@ where
         }
     };
 
-    view! {cx,
-    <div class="relative flex content-center">
-        <button class=class class=BUTTON_CLASS on:click=open_menu>{button(cx)}</button>
-        // <Show when=visible fallback= |_| ()>
-            <ul ref = list_ref
-                class= DROPDOWN_CLASS
-                class:hidden = move || !visible()
-                tabindex = 0
-                on:focusout = close_menu
-                on:click = close_on_select
+    view! {
+        <div class="relative flex content-center">
+            <button class=class class=BUTTON_CLASS on:click=open_menu>
+                {button()}
+            </button>
+            // <Show when=visible fallback= |_| ()>
+            <ul
+                ref=list_ref
+                class=DROPDOWN_CLASS
+                class:hidden=move || !visible()
+                tabindex=0
+                on:focusout=close_menu
+                on:click=close_on_select
             >
-                {children(cx)}
+                {children()}
             </ul>
         // </Show>
-    </div>
+        </div>
     }
 }
 
 #[component]
 pub(crate) fn DropdownButtonItem<S, F>(
-    cx: Scope,
     #[prop(default = String::new(), into)] class: String,
     #[prop(default = false)] separator: bool,
     selected: S,
@@ -107,18 +108,17 @@ where
     );
     let selected = move || selected().to_string();
 
-    view! {cx,
-    <li class="m-0">
-        <button class=class aria-selected=selected tabindex=0 on:click=on_click>
-            {children(cx)}
-        </button>
-    </li>
+    view! {
+        <li class="m-0">
+            <button class=class aria-selected=selected tabindex=0 on:click=on_click>
+                {children()}
+            </button>
+        </li>
     }
 }
 
 #[component]
 pub(crate) fn DropdownLinkItem(
-    cx: Scope,
     #[prop(default = String::new(), into)] class: String,
     #[prop(default = false)] separator: bool,
     #[prop(into)] href: String,
@@ -139,5 +139,5 @@ pub(crate) fn DropdownLinkItem(
         if separator { TOP_SEPARATOR } else { "" }
     );
 
-    view! {cx, <ul><a href=href class=class>{children(cx)}</a></ul> }
+    view! {<ul><a href=href class=class>{children()}</a></ul> }
 }

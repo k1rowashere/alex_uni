@@ -130,48 +130,46 @@ pub(crate) fn theme_event_listener() {
 }
 
 #[component]
-pub fn ThemeDropdown(cx: Scope) -> impl IntoView {
-    let (theme, set_theme) = create_signal(cx, Theme::Light);
+pub fn ThemeDropdown() -> impl IntoView {
+    let (theme, set_theme) = create_signal(Theme::System);
 
     // on the client, get the theme from local storage
     #[cfg(feature = "hydrate")]
     set_theme(get_theme_storage());
 
-    create_effect(cx, move |_| crate::theme::set_theme(theme()));
+    create_effect(move |_| crate::theme::set_theme(theme()));
 
-    let button = move |cx: Scope| {
-        view! {cx,
-            {
-                icon!(cx, "mdi/weather-sunny", "text-2xl", "dark:hidden")
-                    .class("text-blue-600", (cx, move || theme() != Theme::System))
+    let button = move || {
+        view! {
+            {icon!("mdi/weather-sunny", "text-2xl", "dark:hidden")
+                .class("text-blue-600", move || theme() != Theme::System)
             }
-            {
-                icon!(cx, "mdi/weather-night", "text-2xl", "hidden", "dark:block")
-                    .class("text-blue-400", (cx, move || theme() != Theme::System))
+            {icon!("mdi/weather-night", "text-2xl", "hidden", "dark:block")
+                .class("text-blue-400", move || theme() != Theme::System)
             }
         }
     };
-    view! {cx,
+    view! {
         <Dropdown button=button>
             <DropdownButtonItem
                 selected=move || theme() == Theme::Light
                 on_click=move |_| set_theme(Theme::Light)
             >
-                { icon!(cx, "mdi/weather-sunny", "mr-2") }
+                {icon!("mdi/weather-sunny", "mr-2")}
                 Light
             </DropdownButtonItem>
             <DropdownButtonItem
                 selected=move || theme() == Theme::Dark
                 on_click=move |_| set_theme(Theme::Dark)
             >
-                { icon!(cx, "mdi/weather-night", "mr-2" ) }
+                {icon!("mdi/weather-night", "mr-2")}
                 Dark
             </DropdownButtonItem>
             <DropdownButtonItem
                 selected=move || theme() == Theme::System
                 on_click=move |_| set_theme(Theme::System)
             >
-                { icon!(cx, "mdi/monitor", "mr-2") }
+                {icon!("mdi/monitor", "mr-2")}
                 System
             </DropdownButtonItem>
         </Dropdown>
