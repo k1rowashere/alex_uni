@@ -3,7 +3,7 @@ use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
 
-use crate::navbar::{Navbar, VerticalNavbar};
+use crate::navbar::{Navbar, SideNavbar};
 use crate::timetable::TimetablePage;
 
 #[component]
@@ -52,7 +52,7 @@ fn MainWrapper() -> impl IntoView {
     view! {
         <Navbar/>
         <main class="min-h-[calc(100vh-var(--nav-offset))] flex-grow grid md:grid-cols-[minmax(min-content,_max-content)_auto]">
-            <VerticalNavbar/>
+            <SideNavbar/>
             <div class="py-5 px-7 w-auto overflow-x-auto">
                 <Outlet/>
             </div>

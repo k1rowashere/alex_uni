@@ -55,7 +55,7 @@ pub fn Navbar() -> impl IntoView {
 }
 
 #[component]
-pub fn VerticalNavbar() -> impl IntoView {
+pub fn SideNavbar() -> impl IntoView {
     const LINK_CLASS: &str = "h-12 flex items-center overflow-hidden rounded-l pl-1 \
                         hover:bg-gray-200 focus:bg-gray-200 dark:hover:bg-gray-600 dark:focus:bg-gray-600 focus:outline-none \
                         max-md:rounded max-md:p-2 max-sm:justify-center";
@@ -82,13 +82,13 @@ pub fn VerticalNavbar() -> impl IntoView {
         <nav
             class="md:sticky md:py-5 md:pl-1 md:content-start md:top-[var(--nav-offset)] md:max-h-[calc(100vh-var(--nav-offset))] md:border-r-2 \
                 max-md:fixed max-md:bottom-0 max-md:py-3 max-md:grid-cols-4 max-md:justify-between max-md:border-t-2 max-md:w-screen \
-                gap-6 border-opacity-25 vert_nav grid overflow-y-auto border-gray-200 dark:border-gray-600 bg-inherit"
+                gap-6 border-opacity-25 vert_nav grid overflow-y-auto border-gray-400 dark:border-gray-600 bg-inherit"
             class:vert_nav__open=open
             on:click=unfocus
         >
             <button class=LINK_CLASS.to_string() + " max-md:hidden" on:click=move |_| set_open.update(|x| *x = !*x)>
                 //class="rotate-90"
-                <span class="transition-all" class:rotate-90=open>
+                <span class="transition-transform" class:rotate-90=open>
                     {icon!("mdi/chevron-right", "text-3xl")}
                 </span>
             </button>

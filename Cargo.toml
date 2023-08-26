@@ -20,6 +20,7 @@ wasm-bindgen = "=0.2.87"
 web-sys = {version = "0.3.64", features = ["MediaQueryList", "Storage"]}
 js-sys = "0.3.64"
 serde = "1.0.183"
+derive_builder = "0.12.0"
 
 [features]
 default = ['ssr']
