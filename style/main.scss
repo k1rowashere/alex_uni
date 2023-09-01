@@ -11,13 +11,6 @@ input {
     background: none;
 }
 
-.side_nav {
-    // &:not(.side_nav__open, :hover, :focus-within) .side_nav__label {
-    &:not(.side_nav__open) .side_nav__label {
-        width: 0;
-    }
-}
-
 .box {
     background: linear-gradient(
             135deg,

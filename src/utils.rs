@@ -1,3 +1,5 @@
+use wasm_bindgen::JsCast;
+
 /// This is a macro that will inline the contents of an svg file
 /// adds the `fill="currentColor"` attribute to all paths
 /// adds the `aria-hidden="true"` and `focusable="false"` attributes to the svg
@@ -24,4 +26,17 @@ macro_rules! icon {
             .attr("class", ("flex"))
             .attr("inner_html", (inner_html))
     }};
+}
+
+pub fn unfocus_on_select(e: web_sys::MouseEvent) {
+    let el = e
+        .target()
+        .unwrap()
+        .unchecked_into::<web_sys::HtmlElement>()
+        .closest("button, a")
+        .unwrap();
+
+    if let Some(el) = el {
+        el.unchecked_into::<web_sys::HtmlElement>().blur().unwrap()
+    }
 }

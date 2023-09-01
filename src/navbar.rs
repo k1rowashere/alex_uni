@@ -1,14 +1,12 @@
-use leptos::ev::MouseEvent;
 use leptos::*;
 use leptos_router::*;
-
-use wasm_bindgen::JsCast;
 
 use crate::app::LogoutAction;
 use crate::components::dropdown::*;
 use crate::icon;
 use crate::login::Logout;
 use crate::theme::*;
+use crate::utils::unfocus_on_select;
 
 #[component]
 pub fn Navbar() -> impl IntoView {
@@ -58,30 +56,19 @@ pub fn Navbar() -> impl IntoView {
 
 #[component]
 pub fn SideNavbar() -> impl IntoView {
-    const LINK_CLASS: &str = "dropdown_link";
-    const LABEL_CLASS: &str = "dropdown_label side_nav__label";
-
-    // TODO: why do wasm_bindgen be like that
-    let unfocus = move |e: MouseEvent| {
-        let el = e
-            .target()
-            .unwrap()
-            .unchecked_into::<web_sys::HtmlElement>()
-            .closest("button, a")
-            .unwrap();
-        if let Some(el) = el {
-            el.unchecked_into::<web_sys::HtmlElement>().blur().unwrap()
-        }
-    };
+    const NAV_CLASS: &str = "side_nav";
+    const LINK_CLASS: &str = "side_nav__link";
+    const LABEL_CLASS: &str = "side_nav__label";
 
     let (open, set_open) = create_signal(false);
     view! {
+        <style>
+            " .side_nav:not(.side_nav__open) .side_nav__label { width: 0; }"
+        </style>
         <nav
-            class="md:sticky md:py-5 md:pl-1 md:content-start md:top-[var(--nav-offset)] md:max-h-[calc(100vh-var(--nav-offset))]  \
-                max-md:fixed max-md:bottom-0 max-md:py-3 max-md:grid-cols-4 max-md:justify-between max-md:w-screen \
-                gap-6 side_nav grid overflow-y-auto bg-inherit"
+            class=NAV_CLASS
             class:side_nav__open=open
-            on:click=unfocus
+            on:click=unfocus_on_select
         >
             <button class=LINK_CLASS.to_string() + " max-md:hidden" on:click=move |_| set_open.update(|x| *x = !*x)>
                 //class="rotate-90"

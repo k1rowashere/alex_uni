@@ -1,19 +1,7 @@
 #![allow(non_snake_case)]
-use leptos::{
-    ev::{FocusEvent, MouseEvent},
-    html::*,
-    *,
-};
-use wasm_bindgen::JsCast;
+use leptos::{ev::MouseEvent, *};
 
-#[inline]
-pub(crate) fn focus_within(e: FocusEvent) -> bool {
-    e.current_target()
-        .unwrap()
-        .unchecked_into::<web_sys::HtmlElement>()
-        .matches(":focus-within")
-        .unwrap()
-}
+use crate::utils::unfocus_on_select;
 
 #[component]
 pub(crate) fn Dropdown<F, IV>(
@@ -25,57 +13,21 @@ where
     F: Fn() -> IV + 'static,
     IV: IntoView,
 {
-    const DROPDOWN_CLASS: &str = "absolute top-10 right-0 z-50 min-w-[10em] max-w-[20em] \
-                                font-normal text-sm overflow-hidden \
-                                bg-secondary rounded-md shadow-lg \
-                                border border-gray-200 dark:border-gray-700";
-    const BUTTON_CLASS: &str = "text-gray-600 hover:text-gray-800 focus:text-gray-800 \
-                                dark:text-gray-400 dark:hover:text-white dark:focus:text-white \
-                                text-xl rounded-md";
-
-    let (visible, set_visible) = create_signal(false);
-    let list_ref = create_node_ref::<Ul>();
-
-    let open_menu = move |_| {
-        set_visible(true);
-        list_ref.get().unwrap().focus().unwrap();
-    };
-    let close_menu = move |e| {
-        if !focus_within(e) {
-            set_visible(false);
-        }
-    };
-
-    let close_on_select = move |e: MouseEvent| {
-        let clicked = e
-            .target()
-            .unwrap()
-            .unchecked_into::<web_sys::Element>()
-            .tag_name();
-
-        match clicked.as_str() {
-            "BUTTON" | "A" => set_visible(false),
-            _ => (),
-        }
-    };
+    const DROPDOWN_CLASS: &str = "dropdown_menu";
+    const BUTTON_CLASS: &str = "dropdown_menu_button";
 
     view! {
-        <div class="relative flex content-center">
-            <button class=class class=BUTTON_CLASS on:click=open_menu>
+        <div class="relative flex content-center group">
+            <button class=class class=BUTTON_CLASS>
                 {button()}
             </button>
-            // <Show when=visible fallback= |_| ()>
             <ul
-                ref=list_ref
                 class=DROPDOWN_CLASS
-                class:hidden=move || !visible()
                 tabindex=0
-                on:focusout=close_menu
-                on:click=close_on_select
+                on:click=unfocus_on_select
             >
                 {children()}
             </ul>
-        // </Show>
         </div>
     }
 }
