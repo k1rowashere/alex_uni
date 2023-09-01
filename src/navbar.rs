@@ -4,12 +4,15 @@ use leptos_router::*;
 
 use wasm_bindgen::JsCast;
 
+use crate::app::LogoutAction;
 use crate::dropdown::*;
 use crate::icon;
+use crate::login::Logout;
 use crate::theme::*;
 
 #[component]
 pub fn Navbar() -> impl IntoView {
+    let logout = expect_context::<LogoutAction>();
     const ICON: &str = "mr-2 flex content-center";
     view! {
         <nav class="sticky top-0 z-50 bg-inherit w-screen px-5 py-2 rounded-b flex font-semibold gap-2">
@@ -42,13 +45,16 @@ pub fn Navbar() -> impl IntoView {
                     "Profile"
                 </DropdownLinkItem>
                 <DropdownLinkItem href="#">
-                    {icon!("mdi/form-textbox-password", "mr-2")}
-                    "Change Password"
+                    {icon!("mdi/form-textbox-password", "mr-2")} "Change Password"
                 </DropdownLinkItem>
-                <DropdownLinkItem href="#" separator=true>
+                <DropdownButtonItem
+                    on_click=move |_| logout.dispatch(Logout {})
+                    selected=|| false
+                    separator=true
+                >
                     {icon!("mdi/logout", "mr-2")}
                     "Logout"
-                </DropdownLinkItem>
+                </DropdownButtonItem>
             </Dropdown>
         </nav>
     }
@@ -56,13 +62,13 @@ pub fn Navbar() -> impl IntoView {
 
 #[component]
 pub fn SideNavbar() -> impl IntoView {
-    const LINK_CLASS: &str = "h-12 flex items-center overflow-hidden rounded-l pl-1 \
+    const LINK_CLASS: &str = "h-12 flex items-center overflow-hidden pl-1 \
                         hover:bg-gray-200 focus:bg-gray-200 dark:hover:bg-gray-600 dark:focus:bg-gray-600 focus:outline-none \
-                        max-md:rounded max-md:p-2 max-sm:justify-center";
+                        rounded max-md:p-2 max-sm:justify-center";
 
-    const ACTIVE_CLASS: &str = "text-blue-800 dark:text-blue-400";
+    const ACTIVE_CLASS: &str = "text-blue-500";
 
-    const LABEL_CLASS: &str = "ml-2 vert_nav__label max-sm:hidden";
+    const LABEL_CLASS: &str = "side_nav__label ml-2 transition-[width] w-28 max-sm:hidden";
 
     // TODO: why do wasm_bindgen be like that
     let unfocus = move |e: MouseEvent| {
@@ -80,10 +86,10 @@ pub fn SideNavbar() -> impl IntoView {
     let (open, set_open) = create_signal(false);
     view! {
         <nav
-            class="md:sticky md:py-5 md:pl-1 md:content-start md:top-[var(--nav-offset)] md:max-h-[calc(100vh-var(--nav-offset))] md:border-r-2 \
-                max-md:fixed max-md:bottom-0 max-md:py-3 max-md:grid-cols-4 max-md:justify-between max-md:border-t-2 max-md:w-screen \
-                gap-6 border-opacity-25 vert_nav grid overflow-y-auto border-gray-400 dark:border-gray-600 bg-inherit"
-            class:vert_nav__open=open
+            class="md:sticky md:py-5 md:pl-1 md:content-start md:top-[var(--nav-offset)] md:max-h-[calc(100vh-var(--nav-offset))]  \
+                max-md:fixed max-md:bottom-0 max-md:py-3 max-md:grid-cols-4 max-md:justify-between max-md:w-screen \
+                gap-6 side_nav grid overflow-y-auto bg-inherit"
+            class:side_nav__open=open
             on:click=unfocus
         >
             <button class=LINK_CLASS.to_string() + " max-md:hidden" on:click=move |_| set_open.update(|x| *x = !*x)>

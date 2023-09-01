@@ -145,7 +145,7 @@ pub fn ThemeDropdown() -> impl IntoView {
                 .class("text-blue-600", move || theme() != Theme::System)
             }
             {icon!("mdi/weather-night", "text-2xl", "hidden", "dark:block")
-                .class("text-blue-400", move || theme() != Theme::System)
+                .class("text-blue-500", move || theme() != Theme::System)
             }
         }
     };

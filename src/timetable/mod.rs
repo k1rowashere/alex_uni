@@ -1,7 +1,10 @@
 use leptos::*;
 
-use crate::timetable::grid::TimetableGrid;
 mod grid;
+mod list;
+
+use crate::timetable::grid::TimetableGrid;
+use crate::timetable::list::TimetableList;
 
 const PERIOD_START_TIME: [&'static str; 12] = [
     "08:30 AM", "09:20 AM", "10:20 AM", "11:10 AM", "12:10 PM", "01:00 PM", "02:00 PM", "02:50 PM",
@@ -109,7 +112,7 @@ impl ToString for DayOfWeek {
 #[derive(
     Clone, Hash, PartialEq, Eq, serde::Serialize, serde::Deserialize, derive_builder::Builder,
 )]
-pub struct Class {
+pub struct __Class {
     kind: ClassKind,
     code: String,
     name: String,
@@ -124,16 +127,16 @@ pub struct Class {
 pub enum ClassOption {
     None,
     Join,
-    Some(Class),
+    Some(__Class),
 }
 
-#[server(GetUserClasses, "api", "GetJson", "get_user_classes")]
-async fn get_user_classes() -> Result<Vec<Class>, ServerFnError> {
+#[server(GetUserClasses, "/api", "GetJson", "get_user_classes")]
+async fn get_user_classes() -> Result<Vec<__Class>, ServerFnError> {
     // TEMP: simulate slow network
     // std::thread::sleep(std::time::Duration::from_secs(1));
 
     let mut data = vec![
-        Class {
+        __Class {
             kind: ClassKind::Lab,
             code: "CSE 127".to_string(),
             name: "Data Structures I".to_string(),
@@ -146,7 +149,7 @@ async fn get_user_classes() -> Result<Vec<Class>, ServerFnError> {
             day_of_week: DayOfWeek::Saturday,
             period: (4, 5),
         },
-        Class {
+        __Class {
             kind: ClassKind::Tutorial,
             code: "CSE 136".to_string(),
             name: "Digital Logic Circuits I".to_string(),
@@ -159,7 +162,7 @@ async fn get_user_classes() -> Result<Vec<Class>, ServerFnError> {
             day_of_week: DayOfWeek::Saturday,
             period: (6, 6),
         },
-        Class {
+        __Class {
             kind: ClassKind::Lab,
             code: "EEC 116".to_string(),
             name: "Analysis of Electrical Circuits".to_string(),
@@ -172,7 +175,7 @@ async fn get_user_classes() -> Result<Vec<Class>, ServerFnError> {
             day_of_week: DayOfWeek::Saturday,
             period: (7, 7),
         },
-        Class {
+        __Class {
             kind: ClassKind::Lecture,
             code: "CSE 136".to_string(),
             name: "Digital Logic Circuits I".to_string(),
@@ -185,7 +188,7 @@ async fn get_user_classes() -> Result<Vec<Class>, ServerFnError> {
             day_of_week: DayOfWeek::Saturday,
             period: (8, 9),
         },
-        Class {
+        __Class {
             kind: ClassKind::Lecture,
             code: "CSE 127".to_string(),
             name: "Data Structures I".to_string(),
@@ -198,7 +201,7 @@ async fn get_user_classes() -> Result<Vec<Class>, ServerFnError> {
             day_of_week: DayOfWeek::Saturday,
             period: (10, 11),
         },
-        Class {
+        __Class {
             kind: ClassKind::Tutorial,
             code: "EEC 116".to_string(),
             name: "Analysis of Electrical Circuits".to_string(),
@@ -211,7 +214,7 @@ async fn get_user_classes() -> Result<Vec<Class>, ServerFnError> {
             day_of_week: DayOfWeek::Sunday,
             period: (2, 3),
         },
-        Class {
+        __Class {
             kind: ClassKind::Lecture,
             code: "EMP x19".to_string(),
             name: "Probability and Statistics".to_string(),
@@ -224,7 +227,7 @@ async fn get_user_classes() -> Result<Vec<Class>, ServerFnError> {
             day_of_week: DayOfWeek::Sunday,
             period: (5, 7),
         },
-        Class {
+        __Class {
             kind: ClassKind::Lab,
             code: "CSE 136".to_string(),
             name: "Digital Logic Circuits I".to_string(),
@@ -237,7 +240,7 @@ async fn get_user_classes() -> Result<Vec<Class>, ServerFnError> {
             day_of_week: DayOfWeek::Sunday,
             period: (8, 9),
         },
-        Class {
+        __Class {
             kind: ClassKind::Lecture,
             code: "EEC 116".to_string(),
             name: "Analysis of Electrical Circuits".to_string(),
@@ -250,7 +253,7 @@ async fn get_user_classes() -> Result<Vec<Class>, ServerFnError> {
             day_of_week: DayOfWeek::Tuesday,
             period: (4, 5),
         },
-        Class {
+        __Class {
             kind: ClassKind::Tutorial,
             code: "CSE 127".to_string(),
             name: "Data Structures I".to_string(),
@@ -263,7 +266,7 @@ async fn get_user_classes() -> Result<Vec<Class>, ServerFnError> {
             day_of_week: DayOfWeek::Tuesday,
             period: (6, 6),
         },
-        Class {
+        __Class {
             kind: ClassKind::Tutorial,
             code: "EMP x19".to_string(),
             name: "Probability and Statistics".to_string(),
@@ -276,7 +279,7 @@ async fn get_user_classes() -> Result<Vec<Class>, ServerFnError> {
             day_of_week: DayOfWeek::Tuesday,
             period: (7, 7),
         },
-        Class {
+        __Class {
             kind: ClassKind::Lecture,
             code: "TRN x21".to_string(),
             name: "Technical Writing".to_string(),
@@ -289,7 +292,7 @@ async fn get_user_classes() -> Result<Vec<Class>, ServerFnError> {
             day_of_week: DayOfWeek::Tuesday,
             period: (8, 9),
         },
-        Class {
+        __Class {
             kind: ClassKind::Tutorial,
             code: "EMP 116".to_string(),
             name: "Differential Equations".to_string(),
@@ -302,7 +305,7 @@ async fn get_user_classes() -> Result<Vec<Class>, ServerFnError> {
             day_of_week: DayOfWeek::Wednesday,
             period: (0, 0),
         },
-        Class {
+        __Class {
             kind: ClassKind::Lecture,
             code: "EMP 116".to_string(),
             name: "Differential Equations".to_string(),
@@ -329,61 +332,6 @@ async fn get_user_classes() -> Result<Vec<Class>, ServerFnError> {
 }
 
 #[component]
-fn TimetableList(table_data: Vec<Class>) -> impl IntoView {
-    // assumes the list is sorted by day_of_week, and then period
-
-    let mut prev_day = DayOfWeek::Friday;
-    let mut day_header = |c: &Class| {
-        if c.day_of_week != prev_day {
-            prev_day = c.day_of_week;
-            // count number of classes in the same day
-            // shortcircuits when the day changes (since it's sorted)
-            let rowspan = table_data
-                .iter()
-                .filter(|c| c.day_of_week == prev_day)
-                .count();
-            view! {
-                <>
-                    <th rowspan=rowspan>{c.day_of_week.to_string()}</th>
-                </>
-            }
-        } else {
-            leptos::Fragment::new([].to_vec())
-        }
-    };
-
-    let table_body = table_data
-        .iter()
-        .map(|c| {
-            view! {
-                <tr>
-                    {day_header(c)}
-                    <td>
-                        {format!(
-                            "{} → {}",
-                            PERIOD_START_TIME[c.period.0],
-                            PERIOD_END_TIME[c.period.1],
-                        )}
-                    </td>
-                    <td>{format!("[{}]\n{}", c.kind, c.name)}</td>
-                </tr>
-            }
-        })
-        .collect_view();
-
-    view! {
-        <table class="w-full max-w-7xl mx-auto">
-            <thead>
-                <th>"Day"</th>
-                <th>"Time"</th>
-                <th>"Subject"</th>
-            </thead>
-            <tbody>{table_body}</tbody>
-        </table>
-    }
-}
-
-#[component]
 pub fn TimetablePage() -> impl IntoView {
     #[derive(Clone)]
     enum View {
@@ -392,7 +340,7 @@ pub fn TimetablePage() -> impl IntoView {
     }
     let table_data = create_resource(|| (), |_| async move { get_user_classes().await });
 
-    let (view, set_view) = create_signal(View::Grid);
+    let (view, set_view) = create_signal(View::List);
 
     view! {
         // TODO: add settings to timetable generation
@@ -403,6 +351,7 @@ pub fn TimetablePage() -> impl IntoView {
         // o multiple timetable layouts
         // o list view
         // o grid view (default)
+        // - use url to store state
         <h1 class="text-5xl">
             timetable
         </h1>

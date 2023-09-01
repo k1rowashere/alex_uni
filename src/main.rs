@@ -27,7 +27,7 @@ async fn main() -> std::io::Result<()> {
                 || view! { <App/> },
             )
             .app_data(web::Data::new(leptos_options.to_owned()))
-        //.wrap(middleware::Compress::default())
+            .wrap(middleware::Compress::default())
     })
     .bind(&addr)?
     .run()

@@ -1,23 +1,36 @@
 * {
     --nav-offset: 57.5px;
     --vert-nav-offset: 74px;
-    background: inherit;
 }
 
 body {
     font-family: sans-serif;
 }
 
-.vert_nav {
-    // &:not(.vert_nav__open, :hover, :focus-within) .vert_nav__label {
-    &:not(.vert_nav__open) .vert_nav__label {
+input {
+    background: none;
+}
+
+.side_nav {
+    // &:not(.side_nav__open, :hover, :focus-within) .side_nav__label {
+    &:not(.side_nav__open) .side_nav__label {
         width: 0;
     }
 }
 
-.vert_nav__label {
-    transition: width 0.1s ease-in-out;
-    width: 7rem;
+.box {
+    background: linear-gradient(
+            135deg,
+            #1f005c,
+            #5b0060,
+            #870160,
+            #ac255e,
+            #ca485c,
+            #e16b5c,
+            #f39060,
+            #ffb56b
+        )
+        fixed;
 }
 
 .timetable_grid {
@@ -54,5 +67,27 @@ body {
         &:first-child {
             border-right-width: 3px;
         }
+    }
+}
+
+.timetable_list {
+    border: 3px solid;
+    border-color: unset;
+
+    thead tr {
+        border-bottom: 3px solid;
+    }
+
+    tbody tr {
+        th,
+        th ~ * {
+            border-top-width: 3px;
+        }
+    }
+
+    td,
+    th {
+        border: 1px solid;
+        border-left-width: 2px;
     }
 }

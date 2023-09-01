@@ -1,7 +1,7 @@
-use crate::timetable::{Class, ClassOption, PERIOD_END_TIME, PERIOD_START_TIME};
+use crate::timetable::{ClassOption, __Class, PERIOD_END_TIME, PERIOD_START_TIME};
 use leptos::*;
 
-fn timetable_from_classes(classes: Vec<Class>) -> [[ClassOption; 12]; 6] {
+fn timetable_from_classes(classes: Vec<__Class>) -> [[ClassOption; 12]; 6] {
     let mut timetable: [[ClassOption; 12]; 6] =
         std::array::from_fn(|_| std::array::from_fn(|_| ClassOption::None));
     for s in classes {
@@ -14,7 +14,7 @@ fn timetable_from_classes(classes: Vec<Class>) -> [[ClassOption; 12]; 6] {
 }
 
 #[component]
-pub fn TimetableGrid(table_data: Vec<Class>) -> impl IntoView {
+pub fn TimetableGrid(table_data: Vec<__Class>) -> impl IntoView {
     let table_body = timetable_from_classes(table_data)
         .iter()
         .enumerate()

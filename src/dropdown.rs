@@ -27,7 +27,7 @@ where
 {
     const DROPDOWN_CLASS: &str = "absolute top-10 right-0 z-50 min-w-[10em] max-w-[20em] \
                                 font-normal text-sm overflow-hidden \
-                                bg-white dark:bg-gray-800 rounded-md shadow-lg \
+                                bg-secondary rounded-md shadow-lg \
                                 border border-gray-200 dark:border-gray-700";
     const BUTTON_CLASS: &str = "text-gray-600 hover:text-gray-800 focus:text-gray-800 \
                                 dark:text-gray-400 dark:hover:text-white dark:focus:text-white \
@@ -94,7 +94,7 @@ where
 {
     const ITEM: &str = "w-full flex px-4 py-2 hover:bg-gray-200 focus:bg-gray-200 \
                         dark:hover:bg-gray-600 dark:focus:bg-gray-600 focus:outline-none \
-                        aria-selected:text-blue-800 dark:aria-selected:text-blue-400";
+                        aria-selected:text-blue-500";
     const TOP_SEPARATOR: &str = "mt-[calc(theme(spacing.2)+1px)] relative before:absolute \
                         before:bottom-full before:mb-1 before:inset-x-0 before:h-px \
                         before:bg-gray-100 dark:before:bg-gray-600/30 \
@@ -126,7 +126,7 @@ pub(crate) fn DropdownLinkItem(
 ) -> impl IntoView {
     const ITEM: &str = "w-full flex text-left px-4 py-2 hover:bg-gray-200 focus:bg-gray-200 \
                         dark:hover:bg-gray-600 dark:focus:bg-gray-600 focus:outline-none \
-                        aria-selected:text-blue-800 dark:aria-selected:text-blue-400";
+                        aria-selected:text-blue-500 dark:aria-selected:text-blue-500";
     const TOP_SEPARATOR: &str = "mt-[calc(theme(spacing.2)+1px)] relative before:absolute \
                         before:bottom-full before:mb-1 before:inset-x-0 before:h-px \
                         before:bg-gray-100 dark:before:bg-gray-600/30 \
