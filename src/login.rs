@@ -2,45 +2,7 @@ use leptos::AdditionalAttributes as A;
 use leptos::*;
 use leptos_router::*;
 
-#[component]
-fn Input(
-    #[prop(into)] id: String,
-    #[prop(into)] label: String,
-    #[prop(default = false)] required: bool,
-    #[prop(optional, into)] attributes: Option<MaybeSignal<AdditionalAttributes>>,
-) -> impl IntoView {
-    let mut input = view! {
-        <input
-            class="peer p-2 border border-gray-300 dark:border-gray-500 rounded \
-                focus:!border-blue-500 outline-none w-full"
-            id=&id
-            name=&id
-            required=required
-            placeholder=" "
-        />
-    };
-
-    if let Some(attributes) = attributes {
-        let attributes = attributes.get();
-        for (attr_name, attr_value) in attributes.into_iter() {
-            let attr_name = attr_name.to_owned();
-            let attr_value = attr_value.to_owned();
-            input = input.attr(attr_name, move || attr_value.get());
-        }
-    }
-
-    view! {
-        <div class="relative mb-3 w-full">
-            {input}
-            <label for=id
-                class="input_label cursor-text absolute bottom-2 left-2 \
-                    text-gray bg-secondary origin-bottom-left transition-transform"
-            >
-            {label}
-            </label>
-        </div>
-    }
-}
+use crate::components::input::Input;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 struct JwtClaims {
@@ -50,6 +12,23 @@ struct JwtClaims {
 }
 
 type UserId = String;
+
+#[cfg(feature = "ssr")]
+fn clear_session_cookie(res: &leptos_actix::ResponseOptions) {
+    use actix_web::cookie::Cookie;
+    use actix_web::http::header;
+
+    let cookie = Cookie::build("session", "")
+        .path("/")
+        .secure(true)
+        .http_only(true)
+        .same_site(actix_web::cookie::SameSite::Lax)
+        .finish();
+
+    if let Ok(cookie) = header::HeaderValue::from_str(&cookie.to_string()) {
+        res.insert_header(header::SET_COOKIE, cookie);
+    }
+}
 
 #[server(Login, "/api", "Url", "login")]
 async fn login(std_id: String, password: String) -> Result<bool, ServerFnError> {
@@ -83,7 +62,7 @@ async fn login(std_id: String, password: String) -> Result<bool, ServerFnError> 
             let my_claims = JwtClaims {
                 sub: user_id,
                 iat: Utc::now().timestamp() as usize,
-                exp: (Utc::now() + Duration::minutes(10)).timestamp() as usize,
+                exp: (Utc::now() + Duration::days(30)).timestamp() as usize,
             };
             // TODO: use rsa key
             let encoding_key = EncodingKey::from_secret(b"secret");
@@ -116,25 +95,8 @@ async fn logout() -> Result<(), ServerFnError> {
     Ok(())
 }
 
-#[cfg(feature = "ssr")]
-fn clear_session_cookie(res: &leptos_actix::ResponseOptions) {
-    use actix_web::cookie::Cookie;
-    use actix_web::http::header;
-
-    let cookie = Cookie::build("session", "")
-        .path("/")
-        .secure(true)
-        .http_only(true)
-        .same_site(actix_web::cookie::SameSite::Lax)
-        .finish();
-
-    if let Ok(cookie) = header::HeaderValue::from_str(&cookie.to_string()) {
-        res.insert_header(header::SET_COOKIE, cookie);
-    }
-}
-
-#[server(GetUser, "/api", "Url", "get_user")]
-pub async fn get_user() -> Result<Option<UserId>, ServerFnError> {
+#[server(GetUserInfo, "/api", "Url", "get_user_info")]
+pub async fn get_user_info() -> Result<Option<UserId>, ServerFnError> {
     use jsonwebtoken::{decode, DecodingKey, Validation};
     use leptos_actix::extract;
     use leptos_actix::ResponseOptions;

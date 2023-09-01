@@ -5,7 +5,7 @@ use leptos_router::*;
 use wasm_bindgen::JsCast;
 
 use crate::app::LogoutAction;
-use crate::dropdown::*;
+use crate::components::dropdown::*;
 use crate::icon;
 use crate::login::Logout;
 use crate::theme::*;
@@ -40,10 +40,6 @@ pub fn Navbar() -> impl IntoView {
                         "John Doe dlskfjsdlkfjsdlkfjlksdjf lksdjlkfjsd"
                     </span>
                 </li>
-                <DropdownLinkItem href="#" separator=true>
-                    {icon!("mdi/card-account-details-outline", "mr-2")}
-                    "Profile"
-                </DropdownLinkItem>
                 <DropdownLinkItem href="#">
                     {icon!("mdi/form-textbox-password", "mr-2")} "Change Password"
                 </DropdownLinkItem>
@@ -62,13 +58,8 @@ pub fn Navbar() -> impl IntoView {
 
 #[component]
 pub fn SideNavbar() -> impl IntoView {
-    const LINK_CLASS: &str = "h-12 flex items-center overflow-hidden pl-1 \
-                        hover:bg-gray-200 focus:bg-gray-200 dark:hover:bg-gray-600 dark:focus:bg-gray-600 focus:outline-none \
-                        rounded max-md:p-2 max-sm:justify-center";
-
-    const ACTIVE_CLASS: &str = "text-blue-500";
-
-    const LABEL_CLASS: &str = "side_nav__label ml-2 transition-[width] w-28 max-sm:hidden";
+    const LINK_CLASS: &str = "dropdown_link";
+    const LABEL_CLASS: &str = "dropdown_label side_nav__label";
 
     // TODO: why do wasm_bindgen be like that
     let unfocus = move |e: MouseEvent| {
@@ -98,19 +89,23 @@ pub fn SideNavbar() -> impl IntoView {
                     {icon!("mdi/chevron-right", "text-3xl")}
                 </span>
             </button>
-            <A class=LINK_CLASS href="/registration" active_class=ACTIVE_CLASS>
+            <A class=LINK_CLASS href="/" exact=true>
+                {icon!("mdi/id-card", "text-3xl")}
+                <span class="whitespace-nowrap ".to_owned() + LABEL_CLASS>"Student Info"</span>
+            </A>
+            <A class=LINK_CLASS href="/registration">
                 {icon!("mdi/file-document-edit-outline", "text-3xl")}
                 <span class=LABEL_CLASS>"Course Registration"</span>
             </A>
-            <A class=LINK_CLASS href="/timetable" active_class=ACTIVE_CLASS>
+            <A class=LINK_CLASS href="/timetable">
                 {icon!("mdi/timetable", "text-3xl")}
                 <span class=LABEL_CLASS>"Study Timetable"</span>
             </A>
-            <A class=LINK_CLASS href="/financial" active_class=ACTIVE_CLASS>
+            <A class=LINK_CLASS href="/financial">
                 {icon!("mdi/cash-multiple", "text-3xl")}
                 <span class=LABEL_CLASS>"Financial Status"</span>
             </A>
-            <A class=LINK_CLASS href="/grades" active_class=ACTIVE_CLASS>
+            <A class=LINK_CLASS href="/grades">
                 {icon!("mdi/trophy-outline", "text-3xl")}
                 <span class=LABEL_CLASS>"Grades"</span>
             </A>

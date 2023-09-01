@@ -1,7 +1,8 @@
 pub mod app;
-mod dropdown;
+mod components;
 mod login;
 mod navbar;
+mod profile;
 mod theme;
 mod timetable;
 mod utils;

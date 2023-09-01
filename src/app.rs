@@ -2,9 +2,10 @@ use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
 
-use crate::login::{get_user, Login, LoginPage, Logout};
+use crate::login::{get_user_info, Login, LoginPage, Logout};
 use crate::navbar::{Navbar, SideNavbar};
 use crate::timetable::TimetablePage;
+use crate::profile::ProfilePage;
 
 pub type UserResource = Resource<(usize, usize), Result<Option<String>, ServerFnError>>;
 pub type LogoutAction = Action<Logout, Result<(), ServerFnError>>;
@@ -17,7 +18,7 @@ pub fn App() -> impl IntoView {
     let logout = create_server_action::<Logout>();
     let user = create_blocking_resource(
         move || (login.version().get(), logout.version().get()),
-        move |_| get_user(),
+        move |_| get_user_info(),
     );
     let logged_in = move || user.with(|u| matches!(u, Ok(Some(_))));
     provide_context(UserContext(user));
@@ -44,7 +45,7 @@ pub fn App() -> impl IntoView {
                     view=move || view! { <LoginPage action=login logged_in=logged_in/> }
                 />
                 <Route path="/" view=move || view! { <MainWrapper logged_in=logged_in/> }>
-                    <Route path="" view=move || view! { "home" }/>
+                    <Route path="" view=ProfilePage/>
                     <Route path="email" view=move || view! { "email" }/>
                     <Route path="registration" view=move || view! { "registration" }/>
                     <Route path="timetable" view=TimetablePage/>

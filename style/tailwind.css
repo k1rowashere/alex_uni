@@ -29,4 +29,11 @@
   .submit-attempt .peer:invalid ~ .input_label {
     @apply !text-red-500;
   }
+
+  .dropdown_link {
+    @apply h-12 flex items-center overflow-hidden pl-1 hover:bg-gray-200 focus:bg-gray-200 dark:hover:bg-gray-600 dark:focus:bg-gray-600 focus:outline-none rounded max-md:p-2 max-sm:justify-center aria-[current=page]:text-blue-500;
+  }
+  .dropdown_label {
+    @apply ml-2 transition-[width] w-28 max-sm:hidden;
+  }
 }
