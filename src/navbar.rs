@@ -14,12 +14,16 @@ pub fn Navbar() -> impl IntoView {
     const ICON: &str = "mr-2 flex content-center";
     view! {
         <nav class="sticky top-0 z-50 bg-inherit w-screen px-5 py-2 rounded-b flex font-semibold gap-2">
-            <img class="w-8 aspect-[64/83] my-auto" src="assets/alex_logo_min.webp"/>
-            <a class="font-extrabold text-2xl flex-grow my-auto">
-                Alexandria University
-            </a>
+            <A class="font-extrabold text-2xl flex gap-2 flex-grow my-auto" href="/" exact=true>
+                <img
+                    alt="Alexandria University logo"
+                    class="w-8 aspect-[64/83] my-auto"
+                    src="assets/alex_logo_min.webp"
+                />
+                <span>"Alexandria University"</span>
+            </A>
             <ThemeDropdown/>
-            <Dropdown button=move || icon!("mdi/web", "text-2xl")>
+            <Dropdown button=move || icon!("mdi/web", "text-2xl") label="Language Select Dropdown">
                 <DropdownLinkItem href="#">
                     <span class=ICON>"🇺🇸"</span>
                     <span>"English"</span>
@@ -29,7 +33,7 @@ pub fn Navbar() -> impl IntoView {
                     <span>"العربية"</span>
                 </DropdownLinkItem>
             </Dropdown>
-            <Dropdown button=move || icon!("mdi/account", "text-4xl")>
+            <Dropdown button=move || icon!("mdi/account", "text-4xl") label="Profile Menu Dropdown">
                 <li class="grid py-2">
                     <span class="px-2 block text-xs text-gray-500 dark:text-gray-400 t-gray-400">
                         "Signed in as"

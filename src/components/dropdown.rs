@@ -1,12 +1,14 @@
 #![allow(non_snake_case)]
 use leptos::{ev::MouseEvent, *};
 
-use crate::utils::unfocus_on_select;
+use crate::utils::{append_attributes, unfocus_on_select};
 
 #[component]
 pub(crate) fn Dropdown<F, IV>(
     #[prop(default = String::new(), into)] class: String,
     button: F,
+    #[prop(into, default = String::new())] label: String,
+    #[prop(optional, into)] attributes: Option<MaybeSignal<AdditionalAttributes>>,
     children: ChildrenFn,
 ) -> impl IntoView
 where
@@ -18,14 +20,20 @@ where
 
     view! {
         <div class="relative flex content-center group">
-            <button class=class class=BUTTON_CLASS>
-                {button()}
-            </button>
-            <ul
-                class=DROPDOWN_CLASS
-                tabindex=0
-                on:click=unfocus_on_select
-            >
+            {append_attributes(
+                view! {
+                    <button
+                        class=class
+                        class=BUTTON_CLASS
+                        aria-controls=&label
+                        aria-label=&label
+                    >
+                        {button}
+                    </button>
+                },
+                attributes,
+            )}
+            <ul id=label class=DROPDOWN_CLASS tabindex=0 on:click=unfocus_on_select>
                 {children()}
             </ul>
         </div>
