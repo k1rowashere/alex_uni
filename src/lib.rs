@@ -1,5 +1,6 @@
 pub mod app;
 mod components;
+#[cfg_attr(not(feature = "login"), path = "login/mock.rs")]
 mod login;
 mod navbar;
 mod profile;

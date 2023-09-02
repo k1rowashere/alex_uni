@@ -1,8 +1,10 @@
+#[cfg(feature = "login")]
 use leptos::AdditionalAttributes as A;
 use leptos::*;
 use leptos_router::*;
 
 use crate::components::input::Input;
+use crate::utils::UserId;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 struct JwtClaims {
@@ -10,8 +12,6 @@ struct JwtClaims {
     exp: usize,
     iat: usize,
 }
-
-type UserId = String;
 
 #[cfg(feature = "ssr")]
 fn clear_session_cookie(res: &leptos_actix::ResponseOptions) {
