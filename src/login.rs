@@ -160,7 +160,7 @@ where
                 <h2 class="font-bold text-xl mt-6 mb-4">
                     Login
                 </h2>
-                <ActionForm node_ref=form_ref class="flex flex-col" action=action>
+                <ActionForm node_ref=form_ref class="flex flex-col gap-3" action=action>
                     <Input id="std_id" label="Student ID" required=true/>
                     <Input
                         id="password"
@@ -168,7 +168,7 @@ where
                         required=true
                         attributes=A::from([("type", "password")])
                     />
-                    <span class="text-xs text-red-400 mb-2">
+                    <span class="text-xs text-red-400">
                         {move || {
                             match action.value().get() {
                                 None => " ",
@@ -178,7 +178,7 @@ where
                             }
                         }}
                     </span>
-                    <a href="/forgot_password" class="text-gray text-sm mt-2 mb-2">
+                    <a href="/forgot_password" class="text-gray text-sm">
                         "Forgot Password?"
                     </a>
                     <button class="btn-primary" type="submit" value="" on:click=add_submit_class>

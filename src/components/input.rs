@@ -28,7 +28,7 @@ pub fn Input(
     }
 
     view! {
-        <div class="relative mb-3 w-full">
+        <div class="relative w-full">
             {input}
             <label for=id
                 class="input_label cursor-text absolute bottom-2 left-2 \
