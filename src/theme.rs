@@ -150,7 +150,7 @@ pub fn ThemeDropdown() -> impl IntoView {
         }
     };
     view! {
-        <Dropdown button=button>
+        <Dropdown button=button label="Theme Select Dropdown">
             <DropdownButtonItem
                 selected=move || theme() == Theme::Light
                 on_click=move |_| set_theme(Theme::Light)

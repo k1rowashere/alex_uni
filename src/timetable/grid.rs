@@ -1,7 +1,7 @@
-use crate::timetable::{ClassOption, __Class, PERIOD_END_TIME, PERIOD_START_TIME};
+use super::{Class, ClassOption, PERIOD_END_TIME, PERIOD_START_TIME};
 use leptos::*;
 
-fn timetable_from_classes(classes: Vec<__Class>) -> [[ClassOption; 12]; 6] {
+fn timetable_from_classes(classes: Vec<Class>) -> [[ClassOption; 12]; 6] {
     let mut timetable: [[ClassOption; 12]; 6] =
         std::array::from_fn(|_| std::array::from_fn(|_| ClassOption::None));
     for s in classes {
@@ -14,8 +14,47 @@ fn timetable_from_classes(classes: Vec<__Class>) -> [[ClassOption; 12]; 6] {
 }
 
 #[component]
-pub fn TimetableGrid(table_data: Vec<__Class>) -> impl IntoView {
-    let table_body = timetable_from_classes(table_data)
+pub fn TimetableGridLoading() -> impl IntoView {
+    view! {
+        <table class="timetable_grid skeleton w-full h-[70vh]">
+            <thead>
+                <tr>
+                    <td class="!w-[unset] px-2"/>
+                    {(0..12)
+                        .map(|_| {
+                            view! {
+                                <th class="p-1">
+                                    <div class="mx-auto rounded-xl w-[2ch] h-4"></div>
+                                    <div class="mx-auto rounded-xl w-[7ch] h-4"></div>
+                                    <div class="mx-auto rounded-xl w-[8ch] h-4"></div>
+                                </th>
+                            }
+                        })
+                        .collect_view()}
+                </tr>
+            </thead>
+            <tbody>
+                {(0..6).map(|_| view! {
+                    <tr>
+                       <th>
+                       <div class="rounded-xl w-[3ch] h-4"></div>
+                       </th>
+                       {(0..12).map(|_| view! {
+                          <td class="p-1">
+                              <div class="mx-auto rounded-xl w-[8ch] h-4"></div>
+                              </td>
+                      }).collect_view()}
+                    </tr>
+                    })
+                .collect_view()}
+            </tbody>
+        </table>
+    }
+}
+
+#[component]
+pub fn TimetableGrid(data: Vec<Class>) -> impl IntoView {
+    let table_body = timetable_from_classes(data)
         .iter()
         .enumerate()
         .map(|(i, row)| view! { <TimetableGridRow i=i row=row/> })
@@ -34,7 +73,7 @@ fn TimetableGridHead() -> impl IntoView {
     view! {
         <thead>
             <tr>
-                <td style="width: unset;"/>
+                <td class="!w-[unset]"/>
                 {PERIOD_START_TIME
                     .iter()
                     .zip(PERIOD_END_TIME)

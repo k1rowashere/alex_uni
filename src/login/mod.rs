@@ -151,7 +151,7 @@ where
                 }
             }}
         </Suspense>
-        <div class="h-screen w-screen flex content-center">
+        <div class="h-screen w-100 flex content-center">
             <div class="transition-opacity mx-auto my-auto p-8 bg-secondary rounded-2xl shadow-xl">
                 <h1 class="font-bold text-4xl">
                     Alexandria University

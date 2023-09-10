@@ -13,7 +13,7 @@ pub fn Navbar() -> impl IntoView {
     let logout = expect_context::<LogoutAction>();
     const ICON: &str = "mr-2 flex content-center";
     view! {
-        <nav class="sticky top-0 z-50 bg-inherit w-screen px-5 py-2 rounded-b flex font-semibold gap-2">
+        <nav class="sticky top-0 z-50 bg-inherit px-5 py-2 rounded-b flex font-semibold gap-2">
             <A class="font-extrabold text-2xl flex gap-2 flex-grow my-auto" href="/" exact=true>
                 <img
                     alt="Alexandria University logo"
@@ -67,7 +67,7 @@ pub fn SideNavbar() -> impl IntoView {
     let (open, set_open) = create_signal(false);
     view! {
         <style>
-            " .side_nav:not(.side_nav__open) .side_nav__label { width: 0; }"
+            ".side_nav:not(.side_nav__open) .side_nav__label { width: 0; }"
         </style>
         <nav
             class=NAV_CLASS

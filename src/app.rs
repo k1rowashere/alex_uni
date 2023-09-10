@@ -3,12 +3,14 @@ use leptos_meta::*;
 use leptos_router::*;
 
 use crate::login::{get_user_info, Login, LoginPage, Logout};
+
 use crate::navbar::{Navbar, SideNavbar};
-use crate::timetable::TimetablePage;
 use crate::profile::ProfilePage;
+use crate::timetable::TimetablePage;
 
 pub type UserResource = Resource<(usize, usize), Result<Option<String>, ServerFnError>>;
 pub type LogoutAction = Action<Logout, Result<(), ServerFnError>>;
+
 #[derive(Copy, Clone)]
 struct UserContext(UserResource);
 
@@ -20,7 +22,7 @@ pub fn App() -> impl IntoView {
         move || (login.version().get(), logout.version().get()),
         move |_| get_user_info(),
     );
-    let logged_in = move || user.with(|u| matches!(u, Ok(Some(_))));
+    let logged_in = move || user.map(|u| matches!(u, Ok(Some(_))));
     provide_context(UserContext(user));
     provide_context(logout);
 
@@ -60,7 +62,7 @@ pub fn App() -> impl IntoView {
 }
 
 #[component]
-fn AuthRedirect<F>(logged_in: F) -> impl IntoView
+fn MainWrapper<F>(logged_in: F) -> impl IntoView
 where
     F: Fn() -> Option<bool> + 'static + Copy,
 {
@@ -74,20 +76,10 @@ where
                 }
             }}
         </Suspense>
-    }
-}
-
-#[component]
-fn MainWrapper<F>(logged_in: F) -> impl IntoView
-where
-    F: Fn() -> Option<bool> + 'static + Copy,
-{
-    view! {
-        <AuthRedirect logged_in=logged_in/>
         <Navbar/>
-        <main class="min-h-[calc(100vh-var(--nav-offset))] flex-grow grid md:grid-cols-[minmax(min-content,_max-content)_auto]">
+        <main class="bg-inherit min-h-[calc(100vh-var(--nav-offset))] flex-grow grid md:grid-cols-[minmax(min-content,_max-content)_auto]">
             <SideNavbar/>
-            <div class="py-5 px-7 w-auto overflow-x-auto">
+            <div class="py-5 px-7 mx-auto w-full max-w-[90rem] overflow-x-auto">
                 <Outlet/>
             </div>
         </main>

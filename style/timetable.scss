@@ -1,0 +1,60 @@
+.timetable_list,
+.timetable_grid {
+    border-width: 3px;
+    border-style: solid;
+    border-color: rgb(107, 114, 128);
+
+    thead tr {
+        border-bottom-width: 3px;
+    }
+
+    thead,
+    tbody,
+    tr,
+    th,
+    td {
+        border-color: inherit;
+    }
+}
+
+.timetable_list {
+    tbody tr {
+        th,
+        th ~ * {
+            border-top-width: 3px;
+        }
+    }
+
+    td,
+    th {
+        border-width: 1px;
+        border-left-width: 2px;
+    }
+}
+
+.timetable_grid {
+    tbody tr {
+        border-bottom-width: 2px;
+    }
+
+    td {
+        width: calc(100% * 2 / 25);
+    }
+
+    td,
+    th {
+        border-width: 1px;
+
+        &:nth-of-type(2n + 1):not(:last-of-type)[colspan="2"] {
+            border-right-width: 2px;
+        }
+
+        &:nth-of-type(2n):not(:last-of-type) {
+            border-right-width: 2px;
+        }
+
+        &:first-child {
+            border-right-width: 3px;
+        }
+    }
+}

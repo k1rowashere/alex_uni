@@ -1,8 +1,56 @@
+use std::str::FromStr;
+
+use leptos::*;
+use leptos_router::*;
 use wasm_bindgen::JsCast;
 
-/// This is a macro that will inline the contents of an svg file
-/// adds the `fill="currentColor"` attribute to all paths
-/// adds the `aria-hidden="true"` and `focusable="false"` attributes to the svg
+pub type UserId = String;
+
+/// same as `leptos_router::create_query_signal` but with NavigateOptions::replace = true
+/// imo this is a more sensible default
+pub fn create_query_signal<T>(
+    key: impl Into<Oco<'static, str>>,
+) -> (Memo<Option<T>>, SignalSetter<Option<T>>)
+where
+    T: FromStr + ToString + PartialEq,
+{
+    let key = key.into();
+    let query_map = use_query_map();
+    let navigate = use_navigate();
+    let location = use_location();
+
+    let get = create_memo({
+        let key = key.clone();
+        move |_| query_map.with(|map| map.get(&key).and_then(|value| value.parse().ok()))
+    });
+
+    let set = SignalSetter::map(move |value: Option<T>| {
+        let mut new_query_map = query_map.get();
+        match value {
+            Some(value) => {
+                new_query_map.insert(key.to_string(), value.to_string());
+            }
+            None => {
+                new_query_map.remove(&key);
+            }
+        }
+        let qs = new_query_map.to_query_string();
+        let path = location.pathname.get();
+        let new_url = format!("{path}{qs}");
+        navigate(
+            &new_url,
+            NavigateOptions {
+                replace: true,
+                ..Default::default()
+            },
+        );
+    });
+
+    (get, set)
+}
+
+/// This is a macro that will inline the contents of an svg file.
+/// Adds useful attributes to svg container
 /// # Usage:
 /// `icon!("path/to/icon", ...classes)`
 /// ps. path is relative to assets/icons/, `.svg` must be omitted
@@ -28,6 +76,7 @@ macro_rules! icon {
     }};
 }
 
+/// Blurs this element upon click of a child button or anchor elements
 pub fn unfocus_on_select(e: web_sys::MouseEvent) {
     let el = e
         .target()
@@ -39,4 +88,23 @@ pub fn unfocus_on_select(e: web_sys::MouseEvent) {
     if let Some(el) = el {
         el.unchecked_into::<web_sys::HtmlElement>().blur().unwrap()
     }
+}
+
+/// Appends a list of arbitrary attributes to an HTML element
+pub fn append_attributes<T>(
+    mut element: HtmlElement<T>,
+    attributes: Option<MaybeSignal<AdditionalAttributes>>,
+) -> HtmlElement<T>
+where
+    T: leptos::html::ElementDescriptor + 'static,
+{
+    if let Some(attributes) = attributes {
+        let attributes = attributes.get();
+        for (attr_name, attr_value) in attributes.into_iter() {
+            let attr_name = attr_name.to_owned();
+            let attr_value = attr_value.to_owned();
+            element = element.attr(attr_name, move || attr_value.get());
+        }
+    }
+    element
 }
