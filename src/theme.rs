@@ -141,10 +141,10 @@ pub fn ThemeDropdown() -> impl IntoView {
 
     let button = move || {
         view! {
-            {icon!("mdi/weather-sunny", "text-2xl", "dark:hidden")
+            {icon!("mdi/weather-sunny", "text-2xl dark:hidden")
                 .class("text-blue-600", move || theme() != Theme::System)
             }
-            {icon!("mdi/weather-night", "text-2xl", "hidden", "dark:block")
+            {icon!("mdi/weather-night", "text-2xl hidden dark:block")
                 .class("text-blue-500", move || theme() != Theme::System)
             }
         }

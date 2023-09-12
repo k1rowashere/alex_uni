@@ -1,5 +1,7 @@
-use super::{Class, ClassOption, PERIOD_END_TIME, PERIOD_START_TIME};
 use leptos::*;
+
+use super::Class;
+use super::*;
 
 fn timetable_from_classes(classes: Vec<Class>) -> [[ClassOption; 12]; 6] {
     let mut timetable: [[ClassOption; 12]; 6] =
@@ -53,24 +55,15 @@ pub fn TimetableGridLoading() -> impl IntoView {
 }
 
 #[component]
-pub fn TimetableGrid(data: Vec<Class>) -> impl IntoView {
+pub fn TimetableGrid(data: Vec<Class>, flags: TimetableFlags) -> impl IntoView {
     let table_body = timetable_from_classes(data)
         .iter()
         .enumerate()
-        .map(|(i, row)| view! { <TimetableGridRow i=i row=row/> })
+        .map(|(i, row)| view! { <TimetableGridRow i=i row=row flags=&flags/> })
         .collect_view();
 
     view! {
         <table class="w-full timetable_grid">
-            <TimetableGridHead/>
-            <tbody>{table_body}</tbody>
-        </table>
-    }
-}
-
-#[component]
-fn TimetableGridHead() -> impl IntoView {
-    view! {
         <thead>
             <tr>
                 <td class="!w-[unset]"/>
@@ -80,10 +73,13 @@ fn TimetableGridHead() -> impl IntoView {
                     .enumerate()
                     .map(|(i, (&s, e))| {
                         view! {
-                            <th>
-                                <span class="block">{i + 1}</span>
-                                <span class="text-xs block">{s}</span>
-                                <span class="text-xs">{" → "}{e}</span>
+                            <th class="p-1">
+                                <Show when=move || &flags.time_style.get() != &TimeStyle::Times fallback=|| ()>
+                                    <span class="block">{i + 1}</span>
+                                </Show>
+                                <Show when=move || &flags.time_style.get() != &TimeStyle::Numbers fallback=|| ()>
+                                    <span class="text-xs block">{s} {" → "} {e}</span>
+                                </Show>
                             </th>
                         }
                     })
@@ -91,11 +87,17 @@ fn TimetableGridHead() -> impl IntoView {
                 }
             </tr>
         </thead>
+        <tbody>{table_body}</tbody>
+        </table>
     }
 }
 
 #[component]
-fn TimetableGridRow<'a>(i: usize, row: &'a [ClassOption]) -> impl IntoView {
+fn TimetableGridRow<'a>(
+    i: usize,
+    row: &'a [ClassOption],
+    flags: &'a TimetableFlags,
+) -> impl IntoView {
     let usize_to_day = |i| match i {
         0 => "Sat",
         1 => "Sun",
@@ -107,41 +109,31 @@ fn TimetableGridRow<'a>(i: usize, row: &'a [ClassOption]) -> impl IntoView {
         _ => unreachable!(),
     };
 
-    // let calc_key = |c| match c {
-    //     ClassOption::None => 0,
-    //     ClassOption::Join => 1,
-    //     ClassOption::Some(c) => 2 * c.period.1.pow(2) * c.period.0.pow(3),
-    // };
-
-    // TODO: this is prolly gonna use signals in the future
-
     view! {
         <tr>
             <th class="text-left px-2">{usize_to_day(i)}</th>
-            {row.iter().map(|class| view! { <TimetableGridItem class=class/> }).collect_view()}
+            {row
+                .iter()
+                .map(|class| {
+                    match class {
+                        ClassOption::None => view! { <td class="w-[calc(200%/25)]"></td> }.into_view(),
+                        ClassOption::Join => view! { <td class="hidden"></td> }.into_view(),
+                        ClassOption::Some(c) => {
+                            let colspan = c.period.1 - c.period.0 + 1;
+                            view! {
+                                <TimetableItem
+                                    class=c
+                                    is_grid=true
+                                    colspan=colspan
+                                    show_location=flags.show_loc
+                                    show_prof=flags.show_prof
+                                    show_code=flags.show_code
+                                />
+                            }
+                        }
+                    }
+                })
+                .collect_view()}
         </tr>
-    }
-}
-
-#[component]
-fn TimetableGridItem<'a>(class: &'a ClassOption) -> impl IntoView {
-    match class {
-        ClassOption::None => view! { <td class="w-[calc(2/25*100%)]"/> },
-        ClassOption::Join => view! { <td class="hidden"/> },
-        ClassOption::Some(c) => {
-            let colspan = c.period.1 - c.period.0 + 1;
-            let class = "p-1 ".to_string() + c.kind.to_bg_color();
-            view! {
-                <td colspan=colspan class=class>
-                    <span class="text-xs">{format!("[{}] ", c.kind)}</span>
-                    <span class="text-xs after:content-['_-_']">{&c.code}</span>
-                    <br/>
-                    <span class="font-bold">{&c.name}</span>
-                    <br/>
-                    {c.prof.as_ref().map(|p| view! { <span class="text-sm font-thin block">{p}</span> })}
-                    <span class="text-xs">{c.location.to_string()}</span>
-                </td>
-            }
-        }
     }
 }

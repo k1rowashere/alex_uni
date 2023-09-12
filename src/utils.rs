@@ -56,14 +56,16 @@ where
 /// ps. path is relative to assets/icons/, `.svg` must be omitted
 #[macro_export]
 macro_rules! icon {
-    ($icon_name:literal, $cl:expr, $($class:expr),+) => {
-        icon!($icon_name, $($class),+ ).class($cl, true)
-    };
     ($icon_name:literal, $class:expr) => {
-        icon!($icon_name).class($class, true)
+        icon!($icon_name).classes($class)
     };
     ($icon_name:literal) => {{
-        let icon_svg = include_str!(concat!("../assets/icons/", $icon_name, ".svg"));
+        let icon_svg = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/assets/icons/",
+            $icon_name,
+            ".svg"
+        ));
         let inner_html = icon_svg
             .replace("path", "path fill=\"currentColor\"")
             .replace(
@@ -88,6 +90,12 @@ pub fn unfocus_on_select(e: web_sys::MouseEvent) {
     if let Some(el) = el {
         el.unchecked_into::<web_sys::HtmlElement>().blur().unwrap()
     }
+}
+
+/// Returns the value of a checkbox input element
+pub fn is_checked(e: web_sys::Event) -> Option<bool> {
+    e.target()
+        .map(|t| t.unchecked_into::<web_sys::HtmlInputElement>().checked())
 }
 
 /// Appends a list of arbitrary attributes to an HTML element

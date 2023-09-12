@@ -1,6 +1,8 @@
 use leptos::*;
 
-use super::{Class, DayOfWeek, PERIOD_END_TIME, PERIOD_START_TIME};
+use super::{
+    Class, DayOfWeek, TimeStyle, TimetableFlags, TimetableItem, PERIOD_END_TIME, PERIOD_START_TIME,
+};
 
 fn count_days(table_data: &Vec<Class>) -> [u8; 7] {
     let mut days = [0; 7];
@@ -11,7 +13,7 @@ fn count_days(table_data: &Vec<Class>) -> [u8; 7] {
 }
 
 #[component]
-fn TimetableListDayHead<'a>(
+fn TimetableListDay<'a>(
     curr_day: DayOfWeek,
     prev_day: &'a mut DayOfWeek,
     rowspan: u8,
@@ -78,7 +80,7 @@ pub fn TimetableListLoading() -> impl IntoView {
 }
 
 #[component]
-pub fn TimetableList(data: Vec<Class>) -> impl IntoView {
+pub fn TimetableList(data: Vec<Class>, flags: TimetableFlags) -> impl IntoView {
     // assumes the list is sorted by day_of_week, and then period
     let rowspans = count_days(&data);
     let mut prev_day = DayOfWeek::Friday;
@@ -86,45 +88,55 @@ pub fn TimetableList(data: Vec<Class>) -> impl IntoView {
     view! {
         <table class="timetable_list w-full">
             <thead>
-                <th class="w-1/6">"Day"</th>
-                <th class="w-1/6">"Time"</th>
-                <th class="w-2/3">"Class"</th>
+                <th class="w-[calc(100%/8)]">"Day"</th>
+                <Show when=move || flags.time_style.get() != TimeStyle::Numbers fallback=|| ()>
+                    <th class="w-[calc(100%/8 * 1.5)]">"Time"</th>
+                </Show>
+                <Show when=move || flags.time_style.get() != TimeStyle::Times fallback=|| ()>
+                    <th class="w-[calc(100%/8)]">"Period #"</th>
+                </Show>
+                <th>"Class"</th>
             </thead>
             <tbody>
                 {data
                     .iter()
-                    .map(|c| {
+                    .map(|class| {
+                        let c_period = store_value(class.period.clone());
                         view! {
                             <tr>
-                                <TimetableListDayHead
-                                    curr_day=c.day_of_week
+                                <TimetableListDay
+                                    curr_day=class.day_of_week
                                     prev_day=&mut prev_day
-                                    rowspan=rowspans[c.day_of_week as usize]
+                                    rowspan=rowspans[class.day_of_week as usize]
                                 />
-                                <td class="px-2 text-center">
-                                    {PERIOD_START_TIME[c.period.0]} {" → "}
-                                    {PERIOD_END_TIME[c.period.1]}
-                                </td>
-                                <TimetableListItem c=c/>
+                                <Show
+                                    when=move || flags.time_style.get() != TimeStyle::Numbers
+                                    fallback=|| ()
+                                >
+                                    <td class="px-2 text-center">
+                                        {PERIOD_START_TIME[c_period().0]} {" → "}
+                                        {PERIOD_END_TIME[c_period().1]}
+                                    </td>
+                                </Show>
+                                <Show
+                                    when=move || flags.time_style.get() != TimeStyle::Times
+                                    fallback=|| ()
+                                >
+                                    <td class="px-2 text-center">
+                                        {c_period().0 + 1} {" → "} {c_period().1 + 1}
+                                    </td>
+                                </Show>
+                                <TimetableItem
+                                    class=class
+                                    show_location=flags.show_loc
+                                    show_prof=flags.show_prof
+                                    show_code=flags.show_code
+                                />
                             </tr>
                         }
                     })
                     .collect_view()}
             </tbody>
         </table>
-    }
-}
-
-#[component]
-fn TimetableListItem<'a>(c: &'a Class) -> impl IntoView {
-    view! {
-        <td class="p-1" class=c.kind.to_bg_color()>
-            <span class="text-xs">{format!("[{}] ", c.kind)}</span>
-            <span class="text-xs after:content-['_-_']">{&c.code}</span>
-            <span class="font-bold after:content-['_-_']">{&c.name}</span>
-            {c.prof.as_ref().map(|p| view! { <span class="text-sm font-thin">{p}</span> })}
-            <br/>
-            <span class="text-xs">{c.location.to_string()}</span>
-        </td>
     }
 }
