@@ -12,10 +12,10 @@ actix-web = { version = "4", optional = true, features = ["macros"] }
 console_error_panic_hook = "0.1"
 cfg-if = "1"
 http = { version = "0.2", optional = true }
-leptos = { version = "0.5.0-beta", features = ["nightly"] }
-leptos_meta = { version = "0.5.0-beta", features = ["nightly"] }
-leptos_actix = { version = "0.5.0-beta", optional = true }
-leptos_router = { version = "0.5.0-beta", features = ["nightly"] }
+leptos = { version = "0.5.0-rc2", features = ["nightly"] }
+leptos_meta = { version = "0.5.0-rc2", features = ["nightly"] }
+leptos_actix = { version = "0.5.0-rc2", optional = true }
+leptos_router = { version = "0.5.0-rc2", features = ["nightly"] }
 wasm-bindgen = "=0.2.87"
 web-sys = {version = "0.3.64", features = ["MediaQueryList", "Storage"]}
 js-sys = "0.3.64"
@@ -26,6 +26,8 @@ jsonwebtoken = {version = "8.3.0", optional = true}
 chrono = {version = "0.4.28", optional = true}
 strum_macros = "0.25.2"
 strum = "0.25.0"
+rand = "0.8.5"
+macro_rules_attribute = "0.2.0"
 
 [features]
 default = ["ssr"]
