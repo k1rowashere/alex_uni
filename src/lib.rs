@@ -1,12 +1,17 @@
+#[macro_use]
+extern crate macro_rules_attribute;
+
 pub mod app;
 mod components;
+mod theme;
+mod utils;
+
+pub mod class;
+
 #[cfg_attr(not(feature = "login"), path = "login/mock.rs")]
 mod login;
-mod navbar;
 mod profile;
-mod theme;
 mod timetable;
-mod utils;
 
 use cfg_if::cfg_if;
 

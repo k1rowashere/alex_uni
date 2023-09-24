@@ -3,7 +3,7 @@ const LABEL_CLASS: &str = "dot_grid font-bold";
 const GRID_CLASS: &str = "ml-2 grid md:grid-cols-4 max-md:grid-cols-2";
 
 #[component]
-pub fn ProfilePage() -> impl IntoView {
+pub fn profile_page() -> impl IntoView {
     view! {
         <h1 class="text-4xl mb-7">"Student Profile"</h1>
         <div class="flex flex-col gap-4">
@@ -21,7 +21,7 @@ pub fn ProfilePage() -> impl IntoView {
 }
 
 #[component]
-fn Personal() -> impl IntoView {
+fn personal() -> impl IntoView {
     view! {
         <section>
             <h2 class="text-2xl">"Personal Info"</h2>
@@ -54,7 +54,7 @@ fn Personal() -> impl IntoView {
 }
 
 #[component]
-fn Contact() -> impl IntoView {
+fn contact() -> impl IntoView {
     view! {
         <span class=LABEL_CLASS>"Phone Number"</span>
         <span>"VALUE"</span>
@@ -68,7 +68,7 @@ fn Contact() -> impl IntoView {
 }
 
 #[component]
-fn Parent() -> impl IntoView {
+fn parent() -> impl IntoView {
     view! {
         <section>
             <h2 class="text-2xl">"Parent / Guardian Info"</h2>
@@ -87,7 +87,7 @@ fn Parent() -> impl IntoView {
 }
 
 #[component]
-fn Education() -> impl IntoView {
+fn education() -> impl IntoView {
     view! {
         <section>
             <h2 class="text-2xl">"Prior Education"</h2>

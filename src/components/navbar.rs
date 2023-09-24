@@ -9,15 +9,15 @@ use crate::theme::*;
 use crate::utils::unfocus_on_select;
 
 #[component]
-pub fn Navbar() -> impl IntoView {
+pub fn navbar() -> impl IntoView {
     let logout = expect_context::<LogoutAction>();
     const ICON: &str = "mr-2 flex content-center";
     view! {
-        <nav class="sticky top-0 z-50 bg-inherit px-5 py-2 rounded-b flex font-semibold gap-2">
+        <nav class="sticky top-0 z-50 bg-inherit px-5 py-1 rounded-b flex font-semibold gap-2">
             <A class="font-extrabold text-2xl flex gap-2 flex-grow my-auto" href="/" exact=true>
                 <img
                     alt="Alexandria University logo"
-                    class="w-8 aspect-[64/83] my-auto"
+                    class="w-7 aspect-[64/83] my-auto"
                     src="assets/alex_logo_min.webp"
                 />
                 <span>"Alexandria University"</span>
@@ -59,7 +59,7 @@ pub fn Navbar() -> impl IntoView {
 }
 
 #[component]
-pub fn SideNavbar() -> impl IntoView {
+pub fn side_navbar() -> impl IntoView {
     const NAV_CLASS: &str = "side_nav";
     const LINK_CLASS: &str = "side_nav__link";
     const LABEL_CLASS: &str = "side_nav__label";
@@ -74,7 +74,7 @@ pub fn SideNavbar() -> impl IntoView {
             class:side_nav__open=open
             on:click=unfocus_on_select
         >
-            <button class=LINK_CLASS.to_string() + " max-md:hidden" on:click=move |_| set_open.update(|x| *x = !*x)>
+            <button class=format!("max-md:hidden {LINK_CLASS}") on:click=move |_| set_open.update(|x| *x = !*x)>
                 //class="rotate-90"
                 <span class="transition-transform" class:rotate-90=open>
                     {icon!("mdi/chevron-right", "text-3xl")}
@@ -82,7 +82,7 @@ pub fn SideNavbar() -> impl IntoView {
             </button>
             <A class=LINK_CLASS href="/" exact=true>
                 {icon!("mdi/id-card", "text-3xl")}
-                <span class="whitespace-nowrap ".to_owned() + LABEL_CLASS>"Student Info"</span>
+                <span class=format!("whitespace-nowrap {LABEL_CLASS}")>"Student Info"</span>
             </A>
             <A class=LINK_CLASS href="/registration">
                 {icon!("mdi/file-document-edit-outline", "text-3xl")}

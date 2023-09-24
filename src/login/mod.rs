@@ -5,8 +5,9 @@ use leptos_router::*;
 
 use crate::components::input::Input;
 use crate::utils::UserId;
+use serde::{Deserialize, Serialize};
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Serialize, Deserialize)]
 struct JwtClaims {
     sub: String,
     exp: usize,
@@ -31,17 +32,24 @@ fn clear_session_cookie(res: &leptos_actix::ResponseOptions) {
 }
 
 #[server(Login, "/api", "Url", "login")]
-async fn login(std_id: String, password: String) -> Result<bool, ServerFnError> {
+async fn login(
+    std_id: String,
+    password: String,
+) -> Result<bool, ServerFnError> {
     use actix_web::{cookie::Cookie, http::header, http::header::HeaderValue};
     use bcrypt::{verify, BcryptResult};
     use chrono::{Duration, Utc};
     use jsonwebtoken::{encode, EncodingKey, Header};
     use leptos_actix::ResponseOptions;
 
-    fn auth(username: String, password: String) -> BcryptResult<Option<String>> {
+    fn auth(
+        username: String,
+        password: String,
+    ) -> BcryptResult<Option<String>> {
         // test user cred: kirowashere:password
         const USERNAME: &str = "kirowashere";
-        const HASHED: &str = "$2b$12$QQQ3hgxb8h.XvqzMLPA2Ne2lInO2CAoZXg7cSSZdXjzjLJMf.f.hK";
+        const HASHED: &str =
+            "$2b$12$QQQ3hgxb8h.XvqzMLPA2Ne2lInO2CAoZXg7cSSZdXjzjLJMf.f.hK";
 
         // TODO: lookup user on db
 
@@ -103,13 +111,16 @@ pub async fn get_user_info() -> Result<Option<UserId>, ServerFnError> {
 
     let res = expect_context::<ResponseOptions>();
     let jwt = extract(|req: actix_web::HttpRequest| async move {
-        let cookies = req
-            .cookies()
-            .map_err(|_| ServerFnError::Deserialization("Error parsing session cookie".into()))?;
-        let session_cookie = cookies
-            .iter()
-            .find(|el| el.name() == "session")
-            .ok_or(ServerFnError::MissingArg("No session cookie".into()))?;
+        let cookies = req.cookies().map_err(|_| {
+            ServerFnError::Deserialization(
+                "Error parsing session cookie".into(),
+            )
+        })?;
+        let session_cookie =
+            cookies
+                .iter()
+                .find(|el| el.name() == "session")
+                .ok_or(ServerFnError::MissingArg("No session cookie".into()))?;
 
         Ok::<String, ServerFnError>(session_cookie.value().to_string())
     })
@@ -129,7 +140,7 @@ pub async fn get_user_info() -> Result<Option<UserId>, ServerFnError> {
 }
 
 #[component]
-pub fn LoginPage<F>(
+pub fn login_page<F>(
     action: Action<Login, Result<bool, ServerFnError>>,
     logged_in: F,
 ) -> impl IntoView

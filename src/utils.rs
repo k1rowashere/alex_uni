@@ -4,10 +4,34 @@ use leptos::*;
 use leptos_router::*;
 use wasm_bindgen::JsCast;
 
+// TEMP:
 pub type UserId = String;
 
+pub trait Unzip<T1, T2, const N: usize> {
+    fn unzip(self) -> ([T1; N], [T2; N]);
+}
+
+impl<T1, T2, const N: usize> Unzip<T1, T2, N> for [(T1, T2); N] {
+    /// https://lib.rs/crates/unzip-array-of-tuple
+    /// unzip an array of tuple into a tuple of (two arrays)
+    fn unzip(self) -> ([T1; N], [T2; N]) {
+        use std::mem::{self, MaybeUninit};
+
+        let mut first: [MaybeUninit<T1>; N] =
+            unsafe { MaybeUninit::uninit().assume_init() };
+        let mut second: [MaybeUninit<T2>; N] =
+            unsafe { MaybeUninit::uninit().assume_init() };
+
+        for (idx, a) in self.into_iter().enumerate() {
+            first[idx] = MaybeUninit::new(a.0);
+            second[idx] = MaybeUninit::new(a.1);
+        }
+
+        // should be safe, as MaybeUninit doesn't have Drop
+        unsafe { (mem::transmute_copy(&first), mem::transmute_copy(&second)) }
+    }
+}
 /// same as `leptos_router::create_query_signal` but with NavigateOptions::replace = true
-/// imo this is a more sensible default
 pub fn create_query_signal<T>(
     key: impl Into<Oco<'static, str>>,
 ) -> (Memo<Option<T>>, SignalSetter<Option<T>>)
@@ -21,7 +45,10 @@ where
 
     let get = create_memo({
         let key = key.clone();
-        move |_| query_map.with(|map| map.get(&key).and_then(|value| value.parse().ok()))
+        move |_| {
+            query_map
+                .with(|map| map.get(&key).and_then(|value| value.parse().ok()))
+        }
     });
 
     let set = SignalSetter::map(move |value: Option<T>| {
@@ -47,6 +74,28 @@ where
     });
 
     (get, set)
+}
+
+/// Blurs this element upon click of a child button or anchor elements
+pub fn unfocus_on_select(e: web_sys::MouseEvent) {
+    let el = e
+        .target()
+        .unwrap()
+        .unchecked_into::<web_sys::HtmlElement>()
+        .closest("button, a")
+        .unwrap();
+
+    if let Some(el) = el {
+        el.unchecked_into::<web_sys::HtmlElement>().blur().unwrap()
+    }
+}
+
+/// Returns the value of the selected radio input given the group name
+pub fn get_radio_value(name: &str) -> Option<String> {
+    document()
+        .query_selector(&format!("input[name={name}]:checked"))
+        .unwrap()
+        .map(|el| el.unchecked_into::<web_sys::HtmlInputElement>().value())
 }
 
 /// This is a macro that will inline the contents of an svg file.
@@ -76,43 +125,4 @@ macro_rules! icon {
             .attr("class", ("flex"))
             .attr("inner_html", (inner_html))
     }};
-}
-
-/// Blurs this element upon click of a child button or anchor elements
-pub fn unfocus_on_select(e: web_sys::MouseEvent) {
-    let el = e
-        .target()
-        .unwrap()
-        .unchecked_into::<web_sys::HtmlElement>()
-        .closest("button, a")
-        .unwrap();
-
-    if let Some(el) = el {
-        el.unchecked_into::<web_sys::HtmlElement>().blur().unwrap()
-    }
-}
-
-/// Returns the value of a checkbox input element
-pub fn is_checked(e: web_sys::Event) -> Option<bool> {
-    e.target()
-        .map(|t| t.unchecked_into::<web_sys::HtmlInputElement>().checked())
-}
-
-/// Appends a list of arbitrary attributes to an HTML element
-pub fn append_attributes<T>(
-    mut element: HtmlElement<T>,
-    attributes: Option<MaybeSignal<AdditionalAttributes>>,
-) -> HtmlElement<T>
-where
-    T: leptos::html::ElementDescriptor + 'static,
-{
-    if let Some(attributes) = attributes {
-        let attributes = attributes.get();
-        for (attr_name, attr_value) in attributes.into_iter() {
-            let attr_name = attr_name.to_owned();
-            let attr_value = attr_value.to_owned();
-            element = element.attr(attr_name, move || attr_value.get());
-        }
-    }
-    element
 }

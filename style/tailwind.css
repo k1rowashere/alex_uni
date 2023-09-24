@@ -11,10 +11,25 @@
     @apply bg-white dark:bg-gray-800;
   }
 
+  .top-separator {
+    @apply mt-[calc(theme(spacing.2)+1px)] relative before:absolute 
+      before:bottom-full before:mb-1 before:inset-x-0 before:h-px 
+      before:bg-gray-100 dark:before:bg-gray-600/30 before:pointer-events-none;
+  }
+
+  .bg-selections {
+    @apply bg-gray-200 dark:bg-gray-600;
+  }
+
   .btn-primary {
     @apply py-2 px-4 bg-blue-500 text-white font-semibold rounded-lg shadow-md 
     hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 
     focus:ring-opacity-75;
+  }
+
+  .link {
+    @apply hover:bg-selections focus:bg-selections 
+      aria-[current=page]:text-blue-500 transition-colors;
   }
 
   .peer:not(:placeholder-shown) ~ .input_label {
@@ -35,7 +50,7 @@
   .dropdown_menu {
     @apply hidden absolute top-10 right-0 z-50 min-w-[10em] max-w-[30em] 
       font-normal text-sm overflow-hidden bg-secondary rounded-md shadow-lg 
-      border border-gray-200 dark:border-gray-700 group-focus-within:block;
+      border border-gray-200 dark:border-gray-700;
   }
   .dropdown_menu_button {
     @apply text-gray-600 hover:text-gray-800 focus:text-gray-800 
@@ -44,16 +59,14 @@
   }
 
   .side_nav__link {
-    @apply h-12 flex items-center overflow-hidden pl-1 hover:bg-gray-200 
-      focus:bg-gray-200 dark:hover:bg-gray-600 dark:focus:bg-gray-600 
-      focus:outline-none rounded max-md:p-2 max-sm:justify-center 
-      aria-[current=page]:text-blue-500;
+    @apply link h-12 flex items-center overflow-hidden pl-1 focus:outline-none
+      rounded max-md:p-2 max-sm:justify-center;
   }
   .side_nav__label {
     @apply ml-2 transition-[width] w-28 max-md:hidden;
   }
   .side_nav {
-    @apply md:sticky md:py-5 md:pl-1 md:content-start md:top-[var(--nav-offset)] 
+    @apply z-50 md:sticky md:py-5 md:pl-1 md:content-start md:top-[var(--nav-offset)] 
       md:max-h-[calc(100vh-var(--nav-offset))] max-md:fixed max-md:bottom-0 
       max-md:pb-3 max-md:pt-1 max-md:grid-cols-5 max-md:justify-between max-md:w-screen 
       max-md:border-t max-md:border-gray-500 grid gap-6 overflow-y-auto 

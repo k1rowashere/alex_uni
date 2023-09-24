@@ -1,7 +1,7 @@
 @import "timetable";
 
 * {
-    --nav-offset: 57.5px;
+    --nav-offset: 44.4px;
     --vert-nav-offset: 74px;
 }
 
@@ -10,7 +10,8 @@ body {
     scrollbar-gutter: stable both-edges;
 }
 
-input {
+input,
+select {
     background: none;
 }
 
@@ -48,6 +49,20 @@ input {
 //     }
 // }
 //
+.tabcontent {
+    animation-name: fade;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    animation-duration: 150ms;
+}
+
+@keyframes fade {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
 
 @keyframes breathing_bg {
     0% {
@@ -98,4 +113,21 @@ table.skeleton {
         background-size: 12px 2px;
         background-repeat: repeat-x;
     }
+}
+
+@keyframes slidein {
+    from {
+        max-height: 0px;
+    }
+    to {
+        max-height: 253px;
+    }
+}
+
+.slidein {
+    animation-name: slidein;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    animation-duration: 150ms;
+    overflow: hidden;
+    display: flex !important;
 }

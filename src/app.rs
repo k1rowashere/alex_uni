@@ -2,20 +2,21 @@ use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
 
-use crate::login::{get_user_info, Login, LoginPage, Logout};
+use crate::components::navbar::{Navbar, SideNavbar};
 
-use crate::navbar::{Navbar, SideNavbar};
+use crate::login::{get_user_info, Login, LoginPage, Logout};
 use crate::profile::ProfilePage;
 use crate::timetable::TimetablePage;
 
-pub type UserResource = Resource<(usize, usize), Result<Option<String>, ServerFnError>>;
+pub type UserResource =
+    Resource<(usize, usize), Result<Option<String>, ServerFnError>>;
 pub type LogoutAction = Action<Logout, Result<(), ServerFnError>>;
 
 #[derive(Copy, Clone)]
 struct UserContext(UserResource);
 
 #[component]
-pub fn App() -> impl IntoView {
+pub fn app() -> impl IntoView {
     let login = create_server_action::<Login>();
     let logout = create_server_action::<Logout>();
     let user = create_blocking_resource(
@@ -62,10 +63,11 @@ pub fn App() -> impl IntoView {
 }
 
 #[component]
-fn MainWrapper<F>(logged_in: F) -> impl IntoView
+fn main_wrapper<F>(logged_in: F) -> impl IntoView
 where
     F: Fn() -> Option<bool> + 'static + Copy,
 {
+    // TODO: add bottom margin to main if sidebar is fixed to bottom
     view! {
         <Suspense fallback=|| ()>
             {move || {
@@ -87,7 +89,7 @@ where
 }
 
 #[component]
-fn NotFound() -> impl IntoView {
+fn not_found() -> impl IntoView {
     #[cfg(feature = "ssr")]
     {
         let resp = expect_context::<leptos_actix::ResponseOptions>();

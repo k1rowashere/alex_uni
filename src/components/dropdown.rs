@@ -1,15 +1,15 @@
 #![allow(non_snake_case)]
 use leptos::{ev::MouseEvent, *};
 
-use crate::utils::{append_attributes, unfocus_on_select};
+use crate::utils::unfocus_on_select;
 
 #[component]
-pub(crate) fn Dropdown<F, IV>(
-    #[prop(default = String::new(), into)] class: String,
+pub(crate) fn dropdown<F, IV>(
     button: F,
+    #[prop(default = String::new(), into)] class: String,
     #[prop(into, default = String::new())] label: String,
-    #[prop(optional, into)] attributes: Option<MaybeSignal<AdditionalAttributes>>,
-    children: ChildrenFn,
+    #[prop(attrs)] attrs: Vec<(&'static str, Attribute)>,
+    children: Children,
 ) -> impl IntoView
 where
     F: Fn() -> IV + 'static,
@@ -17,23 +17,37 @@ where
 {
     const DROPDOWN_CLASS: &str = "dropdown_menu";
     const BUTTON_CLASS: &str = "dropdown_menu_button";
+    let open = create_rw_signal(false);
+    let wrapper = create_node_ref::<html::Div>();
 
+    let on_focusout = move |_| {
+        if !wrapper().unwrap().matches(":focus-within").unwrap() {
+            open.set(false);
+        }
+    };
     view! {
-        <div class="relative flex content-center group">
-            {append_attributes(
-                view! {
-                    <button
-                        class=class
-                        class=BUTTON_CLASS
-                        aria-controls=&label
-                        aria-label=&label
-                    >
-                        {button}
-                    </button>
-                },
-                attributes,
-            )}
-            <ul id=label class=DROPDOWN_CLASS tabindex=0 on:click=unfocus_on_select>
+        <div
+            node_ref=wrapper
+            class="relative flex content-center"
+            on:focusout=on_focusout
+        >
+            <button
+                class=class
+                class=BUTTON_CLASS
+                aria-controls=&label
+                aria-label=&label
+                aria-expanded=move || open().to_string()
+                on:click=move |_| open.update(|o| *o = !*o)
+                {..attrs}
+            >
+                {button}
+            </button>
+            <ul
+                id=label
+                class=DROPDOWN_CLASS
+                class:block=open
+                on:click=unfocus_on_select
+            >
                 {children()}
             </ul>
         </div>
@@ -55,10 +69,7 @@ where
     const ITEM: &str = "w-full flex px-4 py-2 hover:bg-gray-200 focus:bg-gray-200 \
                         dark:hover:bg-gray-600 dark:focus:bg-gray-600 focus:outline-none \
                         aria-selected:text-blue-500";
-    const TOP_SEPARATOR: &str = "mt-[calc(theme(spacing.2)+1px)] relative before:absolute \
-                        before:bottom-full before:mb-1 before:inset-x-0 before:h-px \
-                        before:bg-gray-100 dark:before:bg-gray-600/30 \
-                        before:pointer-events-none";
+    const TOP_SEPARATOR: &str = "top-separator";
 
     let class = format!(
         "{} {} {}",
@@ -87,10 +98,7 @@ pub(crate) fn DropdownLinkItem(
     const ITEM: &str = "w-full flex text-left px-4 py-2 hover:bg-gray-200 focus:bg-gray-200 \
                         dark:hover:bg-gray-600 dark:focus:bg-gray-600 focus:outline-none \
                         aria-selected:text-blue-500 dark:aria-selected:text-blue-500";
-    const TOP_SEPARATOR: &str = "mt-[calc(theme(spacing.2)+1px)] relative before:absolute \
-                        before:bottom-full before:mb-1 before:inset-x-0 before:h-px \
-                        before:bg-gray-100 dark:before:bg-gray-600/30 \
-                        before:pointer-events-none";
+    const TOP_SEPARATOR: &str = "top-separator";
 
     let class = format!(
         "{} {} {}",
