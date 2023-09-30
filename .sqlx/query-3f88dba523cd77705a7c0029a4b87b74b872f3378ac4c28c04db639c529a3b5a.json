@@ -1,0 +1,92 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT * FROM classes_view WHERE id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Int64"
+      },
+      {
+        "name": "ctype",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "prof",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "name",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "code",
+        "ordinal": 4,
+        "type_info": "Text"
+      },
+      {
+        "name": "building",
+        "ordinal": 5,
+        "type_info": "Text"
+      },
+      {
+        "name": "floor",
+        "ordinal": 6,
+        "type_info": "Int64"
+      },
+      {
+        "name": "room",
+        "ordinal": 7,
+        "type_info": "Text"
+      },
+      {
+        "name": "day_of_week",
+        "ordinal": 8,
+        "type_info": "Int64"
+      },
+      {
+        "name": "period_start",
+        "ordinal": 9,
+        "type_info": "Int64"
+      },
+      {
+        "name": "period_end",
+        "ordinal": 10,
+        "type_info": "Int64"
+      },
+      {
+        "name": "week_parity",
+        "ordinal": 11,
+        "type_info": "Int64"
+      },
+      {
+        "name": "section",
+        "ordinal": 12,
+        "type_info": "Int64"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "3f88dba523cd77705a7c0029a4b87b74b872f3378ac4c28c04db639c529a3b5a"
+}

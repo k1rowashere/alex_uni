@@ -93,6 +93,7 @@ pub fn timetable_grid(
     let (grid, set_grid) = create_grid_signal(data.get_untracked());
 
     // this effect is responsible for updating the grid upon change in data
+    // PERF: This might not be the most optimal way, (try derived signals?)
     create_effect(move |prev: Option<[[TimetableCell; 12]; 6]>| {
         let curr = grid_from_classes(data());
         if let Some(prev) = prev {
@@ -236,14 +237,14 @@ pub fn timetable_cell(
     };
 
     view! {
-        <td colspan=colspan class=format!("p-1 {}", class.kind.to_bg_color())>
-            <span class="text-xs">{format!("[{}] ", class.kind)}</span>
+        <td colspan=colspan class=format!("p-1 {}", class.ctype.to_bg_color())>
+            <span class="text-xs">{format!("[{}] ", class.ctype)}</span>
             <Show when=show_code fallback=|| ()>
                 <span class="text-xs">{&class.code}</span>
             </Show>
             <span class=format!("font-bold {}", style)>{&class.name}</span>
             <Show when=show_prof fallback=|| ()>
-                {if let ClassType::Lecture(prof) = &class.kind {
+                {if let ClassType::Lecture(prof) = &class.ctype {
                     view! { <span class=format!("text-xs font-thin {}", style)>{prof}</span> }
                         .into_view()
                 } else {

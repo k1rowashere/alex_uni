@@ -1,0 +1,92 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            SELECT \n                classes_view.*\n            FROM classes_view\n            INNER JOIN term_subjects as ts\n            INNER JOIN term_subscribers as tsub\n                ON ts.id = tsub.term_subject_id\n            WHERE tsub.student_id = ?;\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Int64"
+      },
+      {
+        "name": "ctype",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "prof",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "name",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "code",
+        "ordinal": 4,
+        "type_info": "Text"
+      },
+      {
+        "name": "building",
+        "ordinal": 5,
+        "type_info": "Text"
+      },
+      {
+        "name": "floor",
+        "ordinal": 6,
+        "type_info": "Int64"
+      },
+      {
+        "name": "room",
+        "ordinal": 7,
+        "type_info": "Text"
+      },
+      {
+        "name": "day_of_week",
+        "ordinal": 8,
+        "type_info": "Int64"
+      },
+      {
+        "name": "period_start",
+        "ordinal": 9,
+        "type_info": "Int64"
+      },
+      {
+        "name": "period_end",
+        "ordinal": 10,
+        "type_info": "Int64"
+      },
+      {
+        "name": "week_parity",
+        "ordinal": 11,
+        "type_info": "Int64"
+      },
+      {
+        "name": "section",
+        "ordinal": 12,
+        "type_info": "Int64"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "a710cc204941a51a9085c5053ff63ec13badbfe6bae510792f5c4864c32f93b6"
+}

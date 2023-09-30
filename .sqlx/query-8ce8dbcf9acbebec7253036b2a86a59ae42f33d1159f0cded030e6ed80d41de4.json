@@ -1,0 +1,92 @@
+{
+  "db_name": "SQLite",
+  "query": "\n                SELECT cv.*\n                FROM classes_view AS cv \n                INNER JOIN term_subjects AS ts \n                    ON cv.id IN (ts.lec_id, ts.lab_id, ts.tut_id)\n                WHERE ts.id = ?\n                ORDER BY CASE\n                    WHEN cv.ctype = 'lec' THEN 1\n                    WHEN cv.ctype = 'tut' THEN 2\n                    WHEN cv.ctype = 'lab' THEN 3\n                END ASC\n            ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Int64"
+      },
+      {
+        "name": "ctype",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "prof",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "name",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "code",
+        "ordinal": 4,
+        "type_info": "Text"
+      },
+      {
+        "name": "building",
+        "ordinal": 5,
+        "type_info": "Text"
+      },
+      {
+        "name": "floor",
+        "ordinal": 6,
+        "type_info": "Int64"
+      },
+      {
+        "name": "room",
+        "ordinal": 7,
+        "type_info": "Text"
+      },
+      {
+        "name": "day_of_week",
+        "ordinal": 8,
+        "type_info": "Int64"
+      },
+      {
+        "name": "period_start",
+        "ordinal": 9,
+        "type_info": "Int64"
+      },
+      {
+        "name": "period_end",
+        "ordinal": 10,
+        "type_info": "Int64"
+      },
+      {
+        "name": "week_parity",
+        "ordinal": 11,
+        "type_info": "Int64"
+      },
+      {
+        "name": "section",
+        "ordinal": 12,
+        "type_info": "Int64"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "8ce8dbcf9acbebec7253036b2a86a59ae42f33d1159f0cded030e6ed80d41de4"
+}

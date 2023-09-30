@@ -6,6 +6,7 @@ use crate::components::navbar::{Navbar, SideNavbar};
 
 use crate::login::{get_user_info, Login, LoginPage, Logout};
 use crate::profile::ProfilePage;
+use crate::registration::RegistrationPage;
 use crate::timetable::TimetablePage;
 
 pub type UserResource =
@@ -50,7 +51,7 @@ pub fn app() -> impl IntoView {
                 <Route path="/" view=move || view! { <MainWrapper logged_in=logged_in/> }>
                     <Route path="" view=ProfilePage/>
                     <Route path="email" view=move || view! { "email" }/>
-                    <Route path="registration" view=move || view! { "registration" }/>
+                    <Route path="registration" view=RegistrationPage/>
                     <Route path="timetable" view=TimetablePage/>
                     <Route path="financial" view=move || view! { "financial" }/>
                     <Route path="grades" view=move || view! { "grades" }/>

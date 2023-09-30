@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS
+  locations (
+    id INTEGER PRIMARY KEY,
+    building TEXT NOT NULL,
+    floor INTEGER NOT NULL,
+    room TEXT NOT NULL
+  ) STRICT;

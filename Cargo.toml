@@ -7,27 +7,38 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-actix-files = { version = "0.6", optional = true }
 actix-web = { version = "4", optional = true, features = ["macros"] }
+actix-files = { version = "0.6", optional = true }
+http = { version = "0.2", optional = true }
+leptos_actix = { version = "0.5.0", optional = true }
+leptos = { version = "0.5.0", features = ["nightly"] }
+leptos_meta = { version = "0.5.0", features = ["nightly"] }
+leptos_router = { version = "0.5.0", features = ["nightly"] }
 console_error_panic_hook = "0.1"
 cfg-if = "1"
-http = { version = "0.2", optional = true }
-leptos = { version = "0.5.0-rc2", features = ["nightly"] }
-leptos_meta = { version = "0.5.0-rc2", features = ["nightly"] }
-leptos_actix = { version = "0.5.0-rc2", optional = true }
-leptos_router = { version = "0.5.0-rc2", features = ["nightly"] }
 wasm-bindgen = "=0.2.87"
-web-sys = {version = "0.3.64", features = ["MediaQueryList", "Storage"]}
+web-sys = { version = "0.3.64", features = ["MediaQueryList", "Storage"] }
 js-sys = "0.3.64"
-serde = "1.0.183"
 derive_builder = "0.12.0"
-bcrypt = {version = "0.15.0", optional = true}
-jsonwebtoken = {version = "8.3.0", optional = true}
-chrono = {version = "0.4.28", optional = true}
+bcrypt = { version = "0.15.0", optional = true }
+jsonwebtoken = { version = "8.3.0", optional = true }
+chrono = { version = "0.4.28", optional = true }
 strum_macros = "0.25.2"
 strum = "0.25.0"
 rand = "0.8.5"
 macro_rules_attribute = "0.2.0"
+sqlx = { version = "0.7.1", optional = true, features = [
+  "runtime-tokio",
+  "json",
+  "tls-rustls",
+  "sqlite",
+  "macros",
+] }
+serde = { version = "1.0.183", features = ["derive"] }
+serde_json = "1.0.107"
+cached = { version = "0.46.0", optional = true, features = ["async"] }
+futures = { version = "0.3.28", optional = true }
+anyhow = "1.0.75"
 
 [features]
 default = ["ssr"]
@@ -36,18 +47,23 @@ local = []
 login = []
 hydrate = ["leptos/hydrate", "leptos_meta/hydrate", "leptos_router/hydrate"]
 ssr = [
-  "dep:actix-files",
-  "dep:actix-web",
   "leptos/ssr",
   "leptos_meta/ssr",
   "leptos_router/ssr",
+  "dep:sqlx",
+  "dep:actix-files",
+  "dep:actix-web",
   "dep:leptos_actix",
   "dep:bcrypt",
   "dep:jsonwebtoken",
   "dep:chrono",
+  "dep:cached",
+  "dep:futures",
 ]
 
-# Defines a size-optimized profile for the WASM bundle in release mode
+[profile.dev.package.sqlx-macros]
+opt-level = 3
+
 [profile.wasm-release]
 inherits = "release"
 opt-level = 'z'

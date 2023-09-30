@@ -1,3 +1,4 @@
+#![feature(array_try_map)]
 #[macro_use]
 extern crate macro_rules_attribute;
 
@@ -11,6 +12,7 @@ pub mod class;
 #[cfg_attr(not(feature = "login"), path = "login/mock.rs")]
 mod login;
 mod profile;
+mod registration;
 mod timetable;
 
 use cfg_if::cfg_if;

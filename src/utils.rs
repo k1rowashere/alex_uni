@@ -126,3 +126,10 @@ macro_rules! icon {
             .attr("inner_html", (inner_html))
     }};
 }
+
+#[macro_export]
+macro_rules! include_str_root{
+    ($path:literal) => {{
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/", $path))
+    }};
+}
