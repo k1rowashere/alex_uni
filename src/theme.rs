@@ -1,73 +1,17 @@
 use crate::components::dropdown::*;
 use crate::icon;
 use leptos::*;
+use leptos_use::*;
+use serde::{Deserialize, Serialize};
 
-#[cfg(feature = "hydrate")]
-use wasm_bindgen::{closure::Closure, JsCast};
-
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Theme {
     Light,
     Dark,
     System,
 }
 
-impl From<&str> for Theme {
-    fn from(str: &str) -> Self {
-        match str {
-            "light" => Theme::Light,
-            "dark" => Theme::Dark,
-            "system" => Theme::System,
-            _ => Theme::System,
-        }
-    }
-}
-
-impl From<String> for Theme {
-    fn from(str: String) -> Self {
-        str.as_str().into()
-    }
-}
-
-impl From<Theme> for &str {
-    fn from(theme: Theme) -> Self {
-        match theme {
-            Theme::Light => "light",
-            Theme::Dark => "dark",
-            Theme::System => "system",
-        }
-    }
-}
-
-pub(crate) fn set_theme(theme: Theme) {
-    match theme {
-        Theme::Light => set_light_theme(),
-        Theme::Dark => set_dark_theme(),
-        Theme::System => set_system_theme(),
-    };
-
-    window()
-        .local_storage()
-        .unwrap()
-        .unwrap()
-        .set_item("theme", theme.into())
-        .unwrap();
-}
-
-pub(crate) fn set_system_theme() {
-    let system_theme = window()
-        .match_media("(prefers-color-scheme: dark)")
-        .unwrap()
-        .unwrap();
-
-    if system_theme.matches() {
-        set_dark_theme();
-    } else {
-        set_light_theme();
-    }
-}
-
-pub(crate) fn set_light_theme() {
+fn set_light_theme() {
     document()
         .document_element()
         .unwrap()
@@ -76,7 +20,7 @@ pub(crate) fn set_light_theme() {
         .unwrap();
 }
 
-pub(crate) fn set_dark_theme() {
+fn set_dark_theme() {
     document()
         .document_element()
         .unwrap()
@@ -85,88 +29,55 @@ pub(crate) fn set_dark_theme() {
         .unwrap();
 }
 
-#[cfg(feature = "hydrate")]
-pub(crate) fn get_theme_storage() -> Theme {
-    let theme = window()
-        .local_storage()
-        .unwrap()
-        .unwrap()
-        .get_item("theme")
-        .unwrap();
+pub type ThemeSignal = (Signal<Theme>, WriteSignal<Theme>);
 
-    match theme {
-        Some(theme) => theme.into(),
-        None => Theme::System,
-    }
-}
+pub fn theme_listener() -> ThemeSignal {
+    let prefers_dark = use_media_query("(prefers-color-scheme: dark)");
+    let (theme, set_theme, _) =
+        storage::use_local_storage("theme", Theme::System);
 
-#[cfg(feature = "hydrate")]
-pub(crate) fn theme_event_listener() {
-    let f = Closure::wrap(Box::new(|e: web_sys::MediaQueryList| {
-        let theme = window()
-            .local_storage()
-            .unwrap()
-            .unwrap()
-            .get_item("theme")
-            .unwrap();
-
-        if theme.is_none() || theme.unwrap() == "system" {
-            if e.matches() {
-                set_dark_theme();
-            } else {
-                set_light_theme();
-            }
-        }
-    }) as Box<dyn FnMut(_)>);
-
-    window()
-        .match_media("(prefers-color-scheme: dark)")
-        .unwrap()
-        .unwrap()
-        .add_event_listener_with_callback("change", &f.as_ref().unchecked_ref())
-        .unwrap();
-
-    f.forget();
+    create_effect(move |_| match theme() {
+        Theme::System => match prefers_dark() {
+            true => set_dark_theme(),
+            false => set_light_theme(),
+        },
+        Theme::Light => set_light_theme(),
+        Theme::Dark => set_dark_theme(),
+    });
+    (theme, set_theme)
 }
 
 #[component]
-pub fn ThemeDropdown() -> impl IntoView {
-    let (theme, set_theme) = create_signal(Theme::System);
-
-    // on the client, get the theme from local storage
-    #[cfg(feature = "hydrate")]
-    set_theme(get_theme_storage());
-
-    create_effect(move |_| crate::theme::set_theme(theme()));
-
+pub fn theme_dropdown() -> impl IntoView {
+    let (get_theme, set_theme) = expect_context::<ThemeSignal>();
     let button = move || {
         view! {
             {icon!("mdi/weather-sunny", "text-2xl dark:hidden")
-                .class("text-blue-600", move || theme() != Theme::System)
+                .class("text-blue-600", move || get_theme() != Theme::System)
             }
             {icon!("mdi/weather-night", "text-2xl hidden dark:block")
-                .class("text-blue-500", move || theme() != Theme::System)
+                .class("text-blue-500", move || get_theme() != Theme::System)
             }
         }
     };
     view! {
         <Dropdown button=button label="Theme Select Dropdown">
             <DropdownButtonItem
-                selected=move || theme() == Theme::Light
+                selected=move || get_theme() == Theme::Light
                 on_click=move |_| set_theme(Theme::Light)
             >
                 {icon!("mdi/weather-sunny", "mr-2")}
                 Light
             </DropdownButtonItem>
             <DropdownButtonItem
-                selected=move || theme() == Theme::Dark
+                selected=move || get_theme() == Theme::Dark
                 on_click=move |_| set_theme(Theme::Dark)
             >
                 {icon!("mdi/weather-night", "mr-2")}
                 Dark
             </DropdownButtonItem>
             <DropdownButtonItem
-                selected=move || theme() == Theme::System
+                selected=move || get_theme() == Theme::System
                 on_click=move |_| set_theme(Theme::System)
             >
                 {icon!("mdi/monitor", "mr-2")}
@@ -174,4 +85,22 @@ pub fn ThemeDropdown() -> impl IntoView {
             </DropdownButtonItem>
         </Dropdown>
     }
+}
+
+/// Script to set the theme based on local storage and system theme
+/// This is blocking by design: to avoid a flash of light theme
+#[component]
+pub fn theme_script() -> impl IntoView {
+    use leptos_meta::Script;
+    const JS: &str = r#"
+        const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        const theme = localStorage.getItem("theme");
+        if (
+            theme === '"Dark"' ||
+            ((theme === null || theme === '"System"') && systemTheme)
+        ) {
+            document.documentElement.classList.add("dark");
+        }
+    "#;
+    view! { <Script>{JS}</Script>}
 }

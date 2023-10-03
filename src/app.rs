@@ -30,17 +30,13 @@ pub fn app() -> impl IntoView {
 
     provide_meta_context();
 
-    // only runs on the client
-    #[cfg(feature = "hydrate")]
-    crate::theme::theme_event_listener();
+    let themes = crate::theme::theme_listener();
+    provide_context(themes);
 
     view! {
         <Stylesheet id="leptos" href="/pkg/uni_web.css"/>
         <Title text="Alexandria University"/>
-        <Script>
-            // Blocking javascript to prevent flash of wrong theme on page load
-            {include_str!("./theme.js")}
-        </Script>
+        <crate::theme::ThemeScript/>
         <Body class="flex flex-col bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-white"/>
         <Router>
             <Routes>
