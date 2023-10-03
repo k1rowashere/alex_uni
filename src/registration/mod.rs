@@ -101,62 +101,86 @@ async fn get_std_class_list() -> Result<Vec<SubjectChoices>, ServerFnError> {
         let len = subjects.len();
         let err = |e| sqlx::Error::Decode(Box::new(e));
 
-        let lab = subjects.pop();
-        let tut = subjects.pop();
-        let lec = subjects.pop();
-
-        match len {
-            1 => Ok(Subject {
-                subs: count as u32,
-                lec: lec.unwrap().try_into().map_err(err)?,
-                tut: None,
-                lab: None,
-            }),
-            3 => Ok(Subject {
-                subs: count as u32,
-                lec: lec.unwrap().try_into().map_err(err)?,
-                tut: Some(tut.unwrap().try_into().map_err(err)?),
-                lab: Some(lab.unwrap().try_into().map_err(err)?),
-            }),
-            _ => Err(sqlx::Error::RowNotFound),
-        }
-    }
-
-    async fn subject_choices_map(
-        s: SubjectChoicesId,
-    ) -> sqlx::Result<SubjectChoices> {
-        Ok(SubjectChoices {
-            level: s.level,
-            name: s.name,
-            code: s.code,
-            choices: stream::iter(s.choices.to_vec())
-                .map(subject_by_id)
-                .buffered(4)
-                .try_collect::<Vec<_>>()
-                .await?,
-        })
-    }
-
+#[cfg(feature = "ssr")]
+#[cached::proc_macro::cached(time = 100, time_refresh, result)]
+async fn subject_by_id(s: SubjectId) -> sqlx::Result<Subject> {
     let req = expect_context::<actix_web::HttpRequest>();
     let pool = req
         .app_data::<sqlx::Pool<sqlx::Sqlite>>()
-        .ok_or(server_error(DB_CTX_ERR))?;
+        .expect("DB ctx not found");
 
-    // Get Student ID from JWT cookie
-    let student_id = 0;
-
-    let subjects = sqlx::query_file_as!(
-        SubjectChoicesId,
-        "sql/select_subjects_choices.sql",
-        student_id
+    let mut subjects = sqlx::query_as!(
+        crate::class::db::ClassRow,
+        r#"
+            SELECT cv.*
+            FROM classes_view AS cv 
+            INNER JOIN term_subjects AS ts 
+                ON cv.id IN (ts.lec_id, ts.lab_id, ts.tut_id)
+            WHERE ts.id = ?
+            ORDER BY CASE
+                WHEN cv.ctype = 'lec' THEN 1
+                WHEN cv.ctype = 'tut' THEN 2
+                WHEN cv.ctype = 'lab' THEN 3
+            END ASC
+        "#,
+        s
     )
     .fetch_all(pool)
     .await?;
 
-    let subjects = stream::iter(subjects)
-        .map(subject_choices_map)
+    match subjects.len() {
+        1 => Ok(Subject {
+            id: s,
+            lec: subjects.pop().unwrap().into(),
+            tut: None,
+            lab: None,
+        }),
+        3 => {
+            let lab = subjects.pop().unwrap().into();
+            let tut = subjects.pop().unwrap().into();
+            let lec = subjects.pop().unwrap().into();
+            Ok(Subject {
+                id: s,
+                lec,
+                tut: Some(tut),
+                lab: Some(lab),
+            })
+        }
+        _ => Err(sqlx::Error::RowNotFound),
+    }
+}
+
+#[server(GetStdClassList, "/api", "GetJson")]
+async fn get_term_subjects() -> Result<Vec<SubjectChoices>, ServerFnError> {
+    use futures::{stream, StreamExt, TryStreamExt};
+
+    let req = expect_context::<actix_web::HttpRequest>();
+    let pool = req
+        .app_data::<sqlx::Pool<sqlx::Sqlite>>()
+        .expect("DB ctx not found");
+
+    let student_id = crate::login::user_id_from_jwt(&req);
+
+    let subjects_by_id =
+        sqlx::query_file!("sql/select_subjects_choices.sql", student_id)
+            .fetch_all(pool)
+            .await?;
+
+    let subjects = stream::iter(subjects_by_id)
+        .map(|s| async move {
+            Ok(SubjectChoices {
+                level: s.level,
+                name: s.name,
+                code: s.code,
+                choices: stream::iter(s.choices.to_vec())
+                    .map(subject_by_id)
+                    .buffered(4)
+                    .try_collect()
+                    .await?,
+            }) as Result<_, sqlx::Error>
+        })
         .buffer_unordered(4)
-        .try_collect::<Vec<_>>()
+        .try_collect()
         .await?;
 
     Ok(subjects)

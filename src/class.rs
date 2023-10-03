@@ -1,6 +1,6 @@
 use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
-use strum_macros::{Display, EnumIter, EnumString, FromRepr, IntoStaticStr};
+use strum_macros::{AsRefStr, Display, EnumIter, EnumString, FromRepr};
 
 derive_alias! {
     #[derive(Common!)] = #[derive(Hash, Clone, PartialEq, Eq, Deserialize, Serialize)];
@@ -22,7 +22,7 @@ pub enum Section {
 /// The type of class, i.e lecture, lab, tutorial
 /// Lecture classes are always weekly and require prof name
 /// Lab and tutorial classes can be bi-weekly and require section number
-#[derive(Common!, IntoStaticStr)]
+#[derive(Common!)]
 pub enum ClassType {
     Lecture(String),
     Lab(Section, WeekParity),
@@ -41,7 +41,7 @@ impl std::fmt::Display for ClassType {
     }
 }
 
-#[derive(Common!, Copy, EnumString, Debug)]
+#[derive(Common!, Copy, EnumString, Debug, AsRefStr)]
 #[strum(serialize_all = "snake_case")]
 pub enum Building {
     Electricity,
@@ -63,9 +63,7 @@ impl std::fmt::Display for Building {
     }
 }
 
-#[derive(
-    Clone, Debug, Hash, PartialEq, Eq, Deserialize, Serialize, Builder,
-)]
+#[derive(Common!, Debug, Builder)]
 pub struct ClassLocation {
     building: Building,
     floor: u8,
@@ -144,11 +142,10 @@ impl ClassBuilder {
 pub mod db {
     use super::Class;
 
-    #[derive(sqlx::FromRow, Clone)]
     pub struct ClassRow {
         pub id: i64,
         pub ctype: String,
-        pub prof: Option<String>,
+        pub prof: String,
         pub name: String,
         pub code: String,
         pub building: String,
@@ -157,63 +154,57 @@ pub mod db {
         pub day_of_week: i64,
         pub period_start: i64,
         pub period_end: i64,
-        pub section: Option<i64>,
+        pub section: i64,
         pub week_parity: Option<i64>,
     }
 
     #[derive(Debug)]
-    pub enum ConversionError {
-        InvalidValue(&'static str, String),
-        MissingValue(&'static str),
+    pub struct InvalidValue {
+        field: &'static str,
+        val: String,
     }
 
-    impl std::fmt::Display for ConversionError {
+    impl std::fmt::Display for InvalidValue {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            match self {
-                Self::InvalidValue(field, val) => {
-                    write!(f, "Invalid value: '{val}' for '{field}'")
-                }
-                Self::MissingValue(field) => {
-                    write!(f, "Missing value for {field}")
-                }
-            }
+            write!(f, "Invalid value: '{}' for '{}'", self.val, self.field)
         }
     }
 
-    impl std::error::Error for ConversionError {}
+    impl std::error::Error for InvalidValue {}
+
+    fn invalid<T>(field: &'static str, val: T) -> InvalidValue
+    where
+        T: std::fmt::Display,
+    {
+        InvalidValue {
+            field,
+            val: val.to_string(),
+        }
+    }
 
     impl TryInto<Class> for ClassRow {
-        type Error = ConversionError;
+        type Error = InvalidValue;
         fn try_into(self) -> Result<Class, Self::Error> {
             use crate::class::*;
-            let invalid = Self::Error::InvalidValue;
-            let missing = Self::Error::MissingValue;
 
             let section = match self.section {
-                Some(1) => Some(Section::One),
-                Some(2) => Some(Section::Two),
-                None => None,
-                Some(v) => return Err(invalid("section", v.to_string())),
+                1 => Section::One,
+                2 => Section::Two,
+                v => return Err(invalid("section", v)),
             };
 
             let parity = match self.week_parity {
                 Some(0) => WeekParity::Even,
                 Some(1) => WeekParity::Odd,
                 None => WeekParity::None,
-                Some(a) => return Err(invalid("week_parity", a.to_string())),
+                Some(a) => return Err(invalid("week_parity", a)),
             };
 
             let ctype = match self.ctype.as_str() {
-                "lec" => ClassType::Lecture(self.prof.ok_or(missing("prof"))?),
-                "lab" => ClassType::Lab(
-                    section.ok_or(missing("section_no_lab"))?,
-                    parity,
-                ),
-                "tut" => ClassType::Tutorial(
-                    section.ok_or(missing("section_no_tut"))?,
-                    parity,
-                ),
-                v => return Err(invalid("ctype", v.to_string())),
+                "lec" => ClassType::Lecture(self.prof),
+                "lab" => ClassType::Lab(section, parity),
+                "tut" => ClassType::Tutorial(section, parity),
+                v => return Err(invalid("ctype", v)),
             };
 
             Ok(Class {
@@ -234,10 +225,56 @@ pub mod db {
                 day_of_week: {
                     let dow = self.day_of_week;
                     DayOfWeek::from_repr(dow as usize)
-                        .ok_or(invalid("day_of_week", dow.to_string()))?
+                        .ok_or(invalid("day_of_week", dow))?
                 },
                 period: (self.period_start as usize, self.period_end as usize),
             })
+        }
+    }
+
+    impl ClassRow {
+        pub fn into_class(self) -> Class {
+            use crate::class::*;
+
+            let section = match self.section {
+                1 => Section::One,
+                2 => Section::Two,
+                _ => unreachable!(),
+            };
+
+            let parity = match self.week_parity {
+                Some(0) => WeekParity::Even,
+                Some(1) => WeekParity::Odd,
+                None => WeekParity::None,
+                _ => unreachable!(),
+            };
+
+            let ctype = match self.ctype.as_str() {
+                "lec" => ClassType::Lecture(self.prof),
+                "lab" => ClassType::Lab(section, parity),
+                "tut" => ClassType::Tutorial(section, parity),
+                _ => unreachable!(),
+            };
+
+            Class {
+                id: ClassId(self.id),
+                ctype,
+                code: self.code,
+                name: self.name,
+                location: ClassLocation {
+                    building: {
+                        let bld = self.building;
+                        bld.as_str().try_into().unwrap()
+                    },
+                    floor: self.floor as u8,
+                    room: self.room,
+                },
+                day_of_week: {
+                    let dow = self.day_of_week;
+                    DayOfWeek::from_repr(dow as usize).unwrap()
+                },
+                period: (self.period_start as usize, self.period_end as usize),
+            }
         }
     }
 }

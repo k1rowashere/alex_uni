@@ -1,6 +1,6 @@
 CREATE VIEW
   IF NOT EXISTS classes_view AS 
-SELECT
+SELECT DISTINCT
   classes.id,
   classes.type as ctype,
   professors.name as prof,
@@ -13,7 +13,7 @@ SELECT
   classes.period_start,
   classes.period_end,
   classes.week_parity,
-  term_subjects.sec_no as section
+  term_subjects.sec_no
 FROM
   term_subjects
   INNER JOIN classes ON term_subjects.lec_id = classes.id

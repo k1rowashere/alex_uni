@@ -38,7 +38,8 @@ serde = { version = "1.0.183", features = ["derive"] }
 serde_json = "1.0.107"
 cached = { version = "0.46.0", optional = true, features = ["async"] }
 futures = { version = "0.3.28", optional = true }
-anyhow = "1.0.75"
+dotenvy = "0.15.7"
+leptos-use = {version = "0.7.0", features = ["storage"]}
 
 [features]
 default = ["ssr"]
@@ -47,6 +48,7 @@ local = []
 login = []
 hydrate = ["leptos/hydrate", "leptos_meta/hydrate", "leptos_router/hydrate"]
 ssr = [
+  "leptos-use/ssr",
   "leptos/ssr",
   "leptos_meta/ssr",
   "leptos_router/ssr",
@@ -60,9 +62,6 @@ ssr = [
   "dep:cached",
   "dep:futures",
 ]
-
-[profile.dev.package.sqlx-macros]
-opt-level = 3
 
 [profile.wasm-release]
 inherits = "release"
