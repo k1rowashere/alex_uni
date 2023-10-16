@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT * FROM classes_view WHERE id = ?",
+  "query": "\n            SELECT cv.* FROM classes_view AS cv \n            INNER JOIN term_subjects AS ts ON cv.id = ts.lec_id\n            WHERE ts.id = ?\n        ",
   "describe": {
     "columns": [
       {
@@ -29,7 +29,7 @@
         "type_info": "Text"
       },
       {
-        "name": "building",
+        "name": "building: Building",
         "ordinal": 5,
         "type_info": "Text"
       },
@@ -44,9 +44,9 @@
         "type_info": "Text"
       },
       {
-        "name": "day_of_week",
+        "name": "day_of_week: DayOfWeek",
         "ordinal": 8,
-        "type_info": "Int64"
+        "type_info": "Text"
       },
       {
         "name": "period_start",
@@ -59,12 +59,12 @@
         "type_info": "Int64"
       },
       {
-        "name": "week_parity",
+        "name": "week_parity: WeekParity",
         "ordinal": 11,
-        "type_info": "Int64"
+        "type_info": "Text"
       },
       {
-        "name": "section",
+        "name": "section: Section",
         "ordinal": 12,
         "type_info": "Int64"
       }
@@ -84,9 +84,9 @@
       false,
       false,
       false,
-      true,
+      false,
       false
     ]
   },
-  "hash": "3f88dba523cd77705a7c0029a4b87b74b872f3378ac4c28c04db639c529a3b5a"
+  "hash": "7138e45abf3cee956029fcfb7a45e179a664a81ab50b28c118aea687ed3bfd37"
 }

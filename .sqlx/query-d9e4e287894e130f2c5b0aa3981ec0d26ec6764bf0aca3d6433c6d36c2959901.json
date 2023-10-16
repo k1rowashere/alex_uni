@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\n                SELECT cv.*\n                FROM classes_view AS cv \n                INNER JOIN term_subjects AS ts \n                    ON cv.id IN (ts.lec_id, ts.lab_id, ts.tut_id)\n                WHERE ts.id = ?\n                ORDER BY CASE\n                    WHEN cv.ctype = 'lec' THEN 1\n                    WHEN cv.ctype = 'tut' THEN 2\n                    WHEN cv.ctype = 'lab' THEN 3\n                END ASC\n            ",
+  "query": "\n            SELECT cv.* FROM classes_view AS cv \n            INNER JOIN term_subjects AS ts ON cv.id = ts.lab_id\n            WHERE ts.id = ?\n        ",
   "describe": {
     "columns": [
       {
@@ -29,7 +29,7 @@
         "type_info": "Text"
       },
       {
-        "name": "building",
+        "name": "building: Building",
         "ordinal": 5,
         "type_info": "Text"
       },
@@ -44,9 +44,9 @@
         "type_info": "Text"
       },
       {
-        "name": "day_of_week",
+        "name": "day_of_week: DayOfWeek",
         "ordinal": 8,
-        "type_info": "Int64"
+        "type_info": "Text"
       },
       {
         "name": "period_start",
@@ -59,12 +59,12 @@
         "type_info": "Int64"
       },
       {
-        "name": "week_parity",
+        "name": "week_parity: WeekParity",
         "ordinal": 11,
-        "type_info": "Int64"
+        "type_info": "Text"
       },
       {
-        "name": "section",
+        "name": "section: Section",
         "ordinal": 12,
         "type_info": "Int64"
       }
@@ -84,9 +84,9 @@
       false,
       false,
       false,
-      true,
+      false,
       false
     ]
   },
-  "hash": "8ce8dbcf9acbebec7253036b2a86a59ae42f33d1159f0cded030e6ed80d41de4"
+  "hash": "d9e4e287894e130f2c5b0aa3981ec0d26ec6764bf0aca3d6433c6d36c2959901"
 }

@@ -1,0 +1,176 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        SELECT\n           sp.*,\n           p.name as program_name,\n           p.code as program_code\n        FROM student_profile AS sp\n        INNER JOIN users AS u ON sp.id = u.profile_id\n        INNER JOIN programs AS p ON sp.program_id = p.id\n        WHERE u.id = ?\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Int64"
+      },
+      {
+        "name": "name_en",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "name_ar",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "program_id",
+        "ordinal": 3,
+        "type_info": "Int64"
+      },
+      {
+        "name": "nationality",
+        "ordinal": 4,
+        "type_info": "Text"
+      },
+      {
+        "name": "gender",
+        "ordinal": 5,
+        "type_info": "Text"
+      },
+      {
+        "name": "birth_date",
+        "ordinal": 6,
+        "type_info": "Date"
+      },
+      {
+        "name": "birth_place",
+        "ordinal": 7,
+        "type_info": "Text"
+      },
+      {
+        "name": "national_id",
+        "ordinal": 8,
+        "type_info": "Text"
+      },
+      {
+        "name": "city",
+        "ordinal": 9,
+        "type_info": "Text"
+      },
+      {
+        "name": "address",
+        "ordinal": 10,
+        "type_info": "Text"
+      },
+      {
+        "name": "phone_no",
+        "ordinal": 11,
+        "type_info": "Text"
+      },
+      {
+        "name": "mobile_no",
+        "ordinal": 12,
+        "type_info": "Text"
+      },
+      {
+        "name": "email",
+        "ordinal": 13,
+        "type_info": "Text"
+      },
+      {
+        "name": "prev_school",
+        "ordinal": 14,
+        "type_info": "Text"
+      },
+      {
+        "name": "prev_qualification",
+        "ordinal": 15,
+        "type_info": "Text"
+      },
+      {
+        "name": "prev_graduation_year",
+        "ordinal": 16,
+        "type_info": "Int64"
+      },
+      {
+        "name": "prev_score",
+        "ordinal": 17,
+        "type_info": "Int64"
+      },
+      {
+        "name": "prev_percent",
+        "ordinal": 18,
+        "type_info": "Float"
+      },
+      {
+        "name": "guardian_name",
+        "ordinal": 19,
+        "type_info": "Text"
+      },
+      {
+        "name": "guardian_occupation",
+        "ordinal": 20,
+        "type_info": "Text"
+      },
+      {
+        "name": "guardian_phone_no",
+        "ordinal": 21,
+        "type_info": "Text"
+      },
+      {
+        "name": "guardian_mobile_no",
+        "ordinal": 22,
+        "type_info": "Text"
+      },
+      {
+        "name": "guardian_email",
+        "ordinal": 23,
+        "type_info": "Text"
+      },
+      {
+        "name": "guardian_address",
+        "ordinal": 24,
+        "type_info": "Text"
+      },
+      {
+        "name": "program_name",
+        "ordinal": 25,
+        "type_info": "Text"
+      },
+      {
+        "name": "program_code",
+        "ordinal": 26,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "983b458d4aa3d0cc965964be1c1618f2bd57cefab960775df668e73897447ec0"
+}

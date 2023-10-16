@@ -7,12 +7,18 @@ async fn main() -> std::io::Result<()> {
     use leptos_actix::{generate_route_list, LeptosRoutes};
     use uni_web::app::*;
 
+    let _ = dotenvy::dotenv();
+
     let conf = get_configuration(None).await.unwrap();
     let addr = conf.leptos_options.site_addr;
     let routes = generate_route_list(App);
-    let pool = sqlx::SqlitePool::connect("sqlite:uni.db")
-        .await
-        .expect("Failed to connect to DB");
+    let pool = sqlx::SqlitePool::connect(
+        std::env::var("DATABASE_URL")
+            .expect("Missing DATABASE_URL")
+            .as_str(),
+    )
+    .await
+    .expect("Failed to connect to DB");
     sqlx::migrate!()
         .run(&pool)
         .await
@@ -24,6 +30,10 @@ async fn main() -> std::io::Result<()> {
 
         App::new()
             .route("/api/{tail:.*}", leptos_actix::handle_server_fns())
+            .route(
+                "/ws/rem_seats",
+                web::get().to(uni_web::registration::rem_seats_ws::rem_seats_ws),
+            )
             .service(Files::new("/pkg", format!("{site_root}/pkg")))
             .service(Files::new("/assets", site_root))
             .service(favicon)

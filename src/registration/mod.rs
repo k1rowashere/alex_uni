@@ -1,34 +1,39 @@
+#[cfg(feature = "ssr")]
+pub mod rem_seats_ws;
+mod server_fns;
+
+use std::collections::BTreeSet;
+
 use leptos::*;
 use leptos_router::*;
+use leptos_use::{use_websocket, UseWebsocketReturn};
 use serde::{Deserialize, Serialize};
 
-use crate::class::{Class, ClassType};
+use crate::and_then;
+use crate::class::{Class, Type as ClassType};
 use crate::components::accordion::*;
-use crate::timetable::{grid::TimetableGrid, TimeStyle, TimetableFlags};
+use crate::components::suserr::SusErr;
+use crate::timetable::{View, *};
+use server_fns::*;
 
-macro_rules_attribute::derive_alias! {
-    #[derive(common!)] = #[derive(Serialize, Deserialize, Clone, PartialEq, Eq)];
-}
-
-#[cfg(feature = "ssr")]
-fn server_error(str: &str) -> ServerFnError {
-    ServerFnError::ServerError(str.to_string())
-}
-
-#[cfg(feature = "ssr")]
-const DB_CTX_ERR: &str = "Database context not found";
-
-const TIMETABLE_FLAGS: TimetableFlags = TimetableFlags {
-    time_style: TimeStyle::Numbers,
-    show_loc: false,
-    show_prof: false,
-    show_code: true,
-    view: crate::timetable::View::Grid,
-};
+#[derive(
+    Serialize,
+    PartialOrd,
+    Ord,
+    PartialEq,
+    Eq,
+    Deserialize,
+    Copy,
+    Clone,
+    Hash,
+    Debug,
+)]
+#[cfg_attr(feature = "ssr", derive(sqlx::Type), sqlx(transparent))]
+pub struct SubjectId(i64);
 
 /// A collection of different choices for a specific subject
-#[derive(common!)]
-pub struct SubjectChoices {
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
+pub struct SubjectSelect {
     level: u8,
     name: String,
     code: String,
@@ -36,181 +41,174 @@ pub struct SubjectChoices {
 }
 
 /// A container for a class and its associated sections and labs
-#[derive(common!)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub struct Subject {
-    subs: u32,
+    id: SubjectId,
+    group: u8,
+    max_seats: u32,
     lec: Class,
     tut: Option<Class>,
     lab: Option<Class>,
 }
 
-#[server]
-async fn get_std_class_list() -> Result<Vec<SubjectChoices>, ServerFnError> {
-    use crate::class::db::ClassRow;
-    use cached::proc_macro::cached;
-    use futures::TryStreamExt;
-    use futures::{stream, StreamExt};
-    use sqlx::types::Json;
+type SelectedSubjects = Result<BTreeSet<SubjectId>, ServerFnError>;
+type SelectedSubjectsResource = Resource<(), SelectedSubjects>;
+type SubjectsResource = Resource<(), Result<Vec<SubjectSelect>, ServerFnError>>;
+type RemSeats = Memo<Vec<(SubjectId, u32)>>;
 
-    // Structs used to query + deserialize from DB
-    #[derive(common!, Hash, sqlx::Type)]
-    #[sqlx(transparent)]
-    struct SubjectId(i64);
-
-    #[derive(common!, Hash)]
-    pub struct SubjectChoicesId {
-        level: u8,
-        name: String,
-        code: String,
-        choices: Json<Vec<SubjectId>>,
-    }
-
-    #[cached(time = 5, result)]
-    async fn subject_by_id(s: SubjectId) -> sqlx::Result<Subject> {
-        let req = expect_context::<actix_web::HttpRequest>();
-        let pool = req
-            .app_data::<sqlx::Pool<sqlx::Sqlite>>()
-            .expect(DB_CTX_ERR);
-
-        let mut subjects = sqlx::query_as!(
-            ClassRow,
-            r#"
-                SELECT cv.*
-                FROM classes_view AS cv 
-                INNER JOIN term_subjects AS ts 
-                    ON cv.id IN (ts.lec_id, ts.lab_id, ts.tut_id)
-                WHERE ts.id = ?
-                ORDER BY CASE
-                    WHEN cv.ctype = 'lec' THEN 1
-                    WHEN cv.ctype = 'tut' THEN 2
-                    WHEN cv.ctype = 'lab' THEN 3
-                END ASC
-            "#,
-            s
-        )
-        .fetch_all(pool)
-        .await?;
-
-        let count = sqlx::query_scalar!(
-            r#"SELECT count(*) as count FROM subjects WHERE id = ?"#,
-            s
-        )
-        .fetch_one(pool)
-        .await?;
-
-        let len = subjects.len();
-        let err = |e| sqlx::Error::Decode(Box::new(e));
-
-#[cfg(feature = "ssr")]
-#[cached::proc_macro::cached(time = 100, time_refresh, result)]
-async fn subject_by_id(s: SubjectId) -> sqlx::Result<Subject> {
-    let req = expect_context::<actix_web::HttpRequest>();
-    let pool = req
-        .app_data::<sqlx::Pool<sqlx::Sqlite>>()
-        .expect("DB ctx not found");
-
-    let mut subjects = sqlx::query_as!(
-        crate::class::db::ClassRow,
-        r#"
-            SELECT cv.*
-            FROM classes_view AS cv 
-            INNER JOIN term_subjects AS ts 
-                ON cv.id IN (ts.lec_id, ts.lab_id, ts.tut_id)
-            WHERE ts.id = ?
-            ORDER BY CASE
-                WHEN cv.ctype = 'lec' THEN 1
-                WHEN cv.ctype = 'tut' THEN 2
-                WHEN cv.ctype = 'lab' THEN 3
-            END ASC
-        "#,
-        s
-    )
-    .fetch_all(pool)
-    .await?;
-
-    match subjects.len() {
-        1 => Ok(Subject {
-            id: s,
-            lec: subjects.pop().unwrap().into(),
-            tut: None,
-            lab: None,
-        }),
-        3 => {
-            let lab = subjects.pop().unwrap().into();
-            let tut = subjects.pop().unwrap().into();
-            let lec = subjects.pop().unwrap().into();
-            Ok(Subject {
-                id: s,
-                lec,
-                tut: Some(tut),
-                lab: Some(lab),
-            })
+#[inline]
+fn map_subject_ids_to_classes(
+    selected_subjects: SelectedSubjectsResource,
+    subjects: SubjectsResource,
+) -> Vec<Class> {
+    if let Some(Ok(selected)) = selected_subjects() {
+        if let Some(Ok(all)) = subjects() {
+            all.iter()
+                .flat_map(|s| s.choices.iter())
+                .filter(|s| selected.contains(&s.id))
+                .flat_map(|s| {
+                    [Some(s.lec.clone()), s.tut.clone(), s.lab.clone()]
+                })
+                .flatten()
+                .collect()
+        } else {
+            Vec::new()
         }
-        _ => Err(sqlx::Error::RowNotFound),
+    } else {
+        Vec::new()
     }
-}
-
-#[server(GetStdClassList, "/api", "GetJson")]
-async fn get_term_subjects() -> Result<Vec<SubjectChoices>, ServerFnError> {
-    use futures::{stream, StreamExt, TryStreamExt};
-
-    let req = expect_context::<actix_web::HttpRequest>();
-    let pool = req
-        .app_data::<sqlx::Pool<sqlx::Sqlite>>()
-        .expect("DB ctx not found");
-
-    let student_id = crate::login::user_id_from_jwt(&req);
-
-    let subjects_by_id =
-        sqlx::query_file!("sql/select_subjects_choices.sql", student_id)
-            .fetch_all(pool)
-            .await?;
-
-    let subjects = stream::iter(subjects_by_id)
-        .map(|s| async move {
-            Ok(SubjectChoices {
-                level: s.level,
-                name: s.name,
-                code: s.code,
-                choices: stream::iter(s.choices.to_vec())
-                    .map(subject_by_id)
-                    .buffered(4)
-                    .try_collect()
-                    .await?,
-            }) as Result<_, sqlx::Error>
-        })
-        .buffer_unordered(4)
-        .try_collect()
-        .await?;
-
-    Ok(subjects)
 }
 
 #[component]
-fn class_accordion(
-    #[prop(into)] curr_tab: Signal<usize>,
-    class_list: Vec<SubjectChoices>,
-) -> impl IntoView {
-    let class_list = store_value(class_list);
+pub fn registration_page() -> impl IntoView {
+    let subjects: SubjectsResource =
+        create_resource(|| (), |_| get_registerable_subjects());
+    let selected_subjects: SelectedSubjectsResource = create_resource(
+        || (),
+        |_| async {
+            Ok(BTreeSet::from_iter(
+                // TODO: handle error (show modal or smth)
+                get_subbed_subjects().await?.into_iter(),
+            ))
+        },
+    );
+    let ss_loading = selected_subjects.loading();
+    provide_context(selected_subjects);
+    // Maps selected_subjects -> selected_classs
+    // to display in timetable
+    // TODO: Collision checking
+    let selected_classes =
+        move || map_subject_ids_to_classes(selected_subjects, subjects);
+
+    // Websocket for streaming remaining places live
+    let rem_seats_msg: RemSeats = create_memo({
+        let UseWebsocketReturn { message, .. } = use_websocket("/ws/rem_seats");
+        move |_| {
+            message()
+                .and_then(|msg| serde_json::from_str(msg.as_str()).ok())
+                .unwrap_or_default()
+        }
+    });
+    provide_context(rem_seats_msg);
+
+    let (get_tab_idx, set_tab_idx) = {
+        let (get, set) = create_query_signal::<usize>("page");
+        let getter = Memo::new(move |_| get().unwrap_or_default());
+        let setter = SignalSetter::map(move |idx| set(Some(idx)));
+
+        (getter, setter)
+    };
+
+    let save_action = create_action(move |_: &RegisterSubjects| async move {
+        if let Some(Ok(ss)) = selected_subjects() {
+            register_subjects(ss).await?;
+        }
+        Ok(())
+    })
+    .using_server_fn::<RegisterSubjects>();
+
+    // TODO: Make scrollable overflow
+    //       Hide extra data in a dropdown?
+    //       Add a filter bar (by group, section, ...)
     view! {
-        <Accordion id="subjects_accordion">
-            {move || {
-                class_list()
-                    .into_iter()
-                    .filter(|c| c.level == curr_tab() as u8)
-                    .enumerate()
-                    .map(move |(i, classes)| {
-                        view! {
-                            <AccordionItem
-                                head=|| view! {
-                                    <ClassAccordionHead name=classes.name code=classes.code/>
-                        #[cached]        }
-                                id=i
+        <h1 class="text-4xl">"Class Registration"</h1>
+        <ActionForm
+            action=save_action
+            // on:submit=move |e| {
+            //     e.prevent_default();
+            //     save_action.dispatch(());
+            // }
+        >
+        <SusErr>
+            {and_then!(move |subjects| {
+                let tabs: BTreeSet<_> = subjects
+                    .iter()
+                    .map(|c| (c.level as usize, format!("Level {}", c.level)))
+                    .collect();
+                let start_tab = tabs.first().map(|(i, _)| *i).unwrap_or_default();
+                view! {
+                    <LevelTabbar tabs start_tab get_tab_idx set_tab_idx/>
+                    <div class="rounded-b-lg p-4 bg-secondary shadow-lg">
+                        <div class="pb-4 flex flex-row items-stretch gap-1">
+                            <ClassAccordion curr_level=get_tab_idx subjects/>
+                            <SideMenu/>
+                        </div>
+                        <div>
+                            <button
+                                type="button"
+                                class="btn-secondary"
+                                on:click=move |_| selected_subjects.refetch()
                             >
-                                {classes
-                                    .choices
+                                "Discard"
+                            </button>
+                            <button type="submit" class="btn-primary" disabled=ss_loading>
+                                "Save"
+                            </button>
+                        </div>
+                        <TimetableGrid data=selected_classes.into_signal()
+                            flags=TimetableFlags {
+                                time_style: TimeStyle::Numbers,
+                                show_loc: false,
+                                show_prof: false,
+                                show_code: true,
+                                view: View::Grid,
+                            }
+                        />
+                    </div>
+                }
+            })}
+        </SusErr>
+        </ActionForm>
+    }
+}
+
+#[component]
+fn class_accordion_head(name: String, code: String) -> impl IntoView {
+    // TODO: add selected group number + sections
+    view! { <div class="font-bold">{format!("[{code}] {name}")}</div> }
+}
+
+#[component]
+fn class_accordion<'a>(
+    #[prop(into)] curr_level: Signal<usize>,
+    subjects: &'a [SubjectSelect],
+) -> impl IntoView {
+    let subjects = store_value(subjects.to_owned());
+
+    view! {
+        <Accordion>
+            {move || {
+                subjects.get_value()
+                    .into_iter()
+                    .filter(|c| c.level == curr_level() as u8)
+                    .map(move |s| {
+                        view! {
+                            <AccordionItem head=|| {
+                                view! { <ClassAccordionHead name=s.name code=s.code/> }
+                            }>
+                                {s.choices
                                     .into_iter()
-                                    .map(|class| view! { <Class class/> })
+                                    .map(|subject| view! { <Class subject/> })
                                     .collect_view()}
                             </AccordionItem>
                         }
@@ -222,104 +220,123 @@ fn class_accordion(
 }
 
 #[component]
-fn class_accordion_head(name: String, code: String) -> impl IntoView {
-    // TODO: add selected group number + sections
-    view! { <div class="font-bold">{format!("[{code}] {name}")}</div> }
-}
+fn class(subject: Subject) -> impl IntoView {
+    let Subject {
+        id,
+        max_seats,
+        group,
+        lec,
+        tut,
+        lab,
+    } = subject;
 
-#[component]
-fn class(class: Subject) -> impl IntoView {
-    let lec = class.lec;
-    // let [tut1, tut2] = class.tuts;
-    // let [lab1, lab2] = class.labs;
+    let selected_subjects = expect_context::<SelectedSubjectsResource>();
 
+    let rem_seats = create_memo(move |prev| {
+        expect_context::<RemSeats>()
+            .get()
+            .iter()
+            .find_map(|&(sid, seats)| (sid == id).then_some(seats))
+            .or(prev.cloned())
+            .unwrap_or_default()
+    });
+
+    let prof = match lec.ctype {
+        ClassType::Lecture { prof } => prof,
+        _ => String::new(),
+    };
+
+    let sec_no = {
+        let sec_no_tut = tut.and_then(|t| match t.ctype {
+            ClassType::Tutorial { sec_no, .. } => Some(sec_no),
+            _ => None,
+        });
+
+        let sec_no_lab = lab.and_then(|t| match t.ctype {
+            ClassType::Lab { sec_no, .. } => Some(sec_no),
+            _ => None,
+        });
+
+        sec_no_tut.or(sec_no_lab)
+    };
+
+    let on_click = move |_| {
+        selected_subjects.update(|ss| {
+            if let Some(Ok(ss)) = ss {
+                if !ss.insert(id) {
+                    ss.remove(&id);
+                }
+            };
+        })
+    };
+    let is_selected = move || {
+        if let Some(Ok(ss)) = selected_subjects() {
+            ss.contains(&id)
+        } else {
+            false
+        }
+    };
+
+    // TODO:
+    // - form stuff (class selection)
+    // - highlight if selected
+
+    // "bg-red-500"
     view! {
         <div class="flex [&:not(:first-child)]:top-separator items-center content-center gap-2">
             <div class="w-full flex flex-col gap-2">
                 <div>
-                    // <div>{format!("Group {}", lec.group)}</div>
-                    <span>"[Lecture]"</span>
-                    {if let ClassType::Lecture(prof) = &lec.ctype {
-                        view! { <span class="text-xs font-thin">{prof}</span> }.into_view()
-                    } else {
-                        ().into_view()
-                    }}
-                    <span class="text-xs">{lec.location.to_string()}</span>
+                    {format!("Group {group}")}
+                    {sec_no.map_or(
+                        String::new(),
+                        |sec_no| format!(" - Section {}", sec_no as u8)
+                    )}
                 </div>
-            </div>
-        </div>
-    }
-}
-
-#[component]
-pub fn registration_page() -> impl IntoView {
-    let class_list = create_resource(|| (), |_| get_std_class_list());
-
-    // provide_context(class_map);
-
-    let (selected_classes, set_selected_classes) = create_signal(Vec::new());
-    let _ = set_selected_classes;
-
-    let (tab_idx, set_tab_idx) = create_query_signal::<usize>("page");
-    let set_tab_idx = SignalSetter::map(move |idx| set_tab_idx(Some(idx)));
-    let get_tab_idx = create_memo(move |_| tab_idx().unwrap_or_default());
-
-    // TODO: Make scrollable overflow
-    //       Hide extra data in a dropdown?
-    //       Add a filter bar (by group, section, ...)
-    //       Add deselect all button
-    view! {
-        <h1 class="text-4xl">"Class Registration"</h1>
-        <Suspense fallback=move || view! { <div>"loading..."</div> }>
-            <ErrorBoundary fallback=move |_| view!{<div>"server error"</div>}>
-            {
-                move || class_list.and_then(|class_list| {
-                    let tabs: Vec<_> = class_list.iter().map(|c| format!("Level {}", c.level)).collect();
-                    view!{<Tabbar tabs get_tab_idx set_tab_idx/>}
-                })
-            }
-            </ErrorBoundary>
-        </Suspense>
-        <div class="rounded-b bg-secondary shadow-lg">
-            <div class="p-4 flex flex-row items-stretch gap-1">
-                <Suspense fallback=move || view! { <AccordionSkeleton count=6/> }>
-                    <ErrorBoundary fallback=|_| {
-                        view! { <div>"Server error"</div> }
-                    }>
-                        {move || {
-                            class_list
-                                .and_then(|class_list| {
-                                    view! {
-                                        <ClassAccordion
-                                            curr_tab=get_tab_idx
-                                            class_list=class_list.clone()
-                                        />
-                                    }
-                                })
+                <div>
+                    <span>"[Lec]"</span>
+                    <span class="text-xs font-thin">{prof}</span>
+                    <span>{lec.day_of_week.to_string()}</span>
+                    <span>
+                        {lec.period.0 + 1}
+                        {if lec.period.1 == lec.period.0 {
+                            "".to_string()
+                        } else {
+                            format!(" → {}", lec.period.1 + 1)
                         }}
-                    </ErrorBoundary>
-                </Suspense>
-            <SideMenu/>
+                    </span>
+                </div>
+                <button
+                    type="button"
+                    class=move || if is_selected() { "btn-danger" } else { "btn-primary" }
+                    on:click=on_click
+                >
+                    {move || if is_selected() { "Remove" } else { "Add" }}
+                    <span class="text-xs font-thin">
+                        {move || format!(" ({} / {})", rem_seats(), max_seats)}
+                    </span>
+                </button>
             </div>
-            <TimetableGrid data=selected_classes flags=TIMETABLE_FLAGS/>
         </div>
     }
 }
 
 #[component]
-fn tabbar(
-    #[prop(into)] tabs: MaybeSignal<Vec<String>>,
+fn level_tabbar(
+    #[prop(into)] tabs: MaybeSignal<BTreeSet<(usize, String)>>,
     #[prop(into)] get_tab_idx: Signal<usize>,
     #[prop(into)] set_tab_idx: SignalSetter<usize>,
+    #[prop(optional)] start_tab: usize,
 ) -> impl IntoView {
+    create_effect(move |_| set_tab_idx(start_tab));
     view! {
-        <div class="flex flex-row gap-1 rounded-t bg-gray-500">
+        <div class="flex flex-row gap-1 rounded-t-lg bg-tertiary h-[calc(1em_+_1rem)]">
             <For
-                each=move || tabs().into_iter().enumerate()
+                each=tabs
                 key=|(i, _)| *i
                 let:item
             >
                 <button
+                    type="button"
                     role="tab"
                     class="link flex-grow p-2 text-center flex rounded-t-lg aria-selected:bg-secondary \
                         max-w-[20%] aria-selected:font-bold"
@@ -327,7 +344,7 @@ fn tabbar(
                     aria-controls=move || format!("tab-{}", item.0)
                     on:click=move |_| set_tab_idx(item.0)
                 >
-                    {item.1.to_string()}
+                    {item.1}
                 </button>
             </For>
         </div>
@@ -358,7 +375,7 @@ fn side_menu() -> impl IntoView {
                     </select>
                 </div>
             </div>
-            <button class="btn-primary">"Apply Preset"</button>
+            <button type="button" class="btn-primary">"Apply Preset"</button>
         </div>
     }
 }

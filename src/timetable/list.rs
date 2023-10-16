@@ -78,7 +78,7 @@ pub fn timetable_list(
             <tr>
                 {
                     let curr_day = class.day_of_week;
-                    if curr_day!= prev_day {
+                    if curr_day != prev_day {
                         prev_day = curr_day;
                         view! {
                             <th rowspan=rowspans[class.day_of_week as usize]>

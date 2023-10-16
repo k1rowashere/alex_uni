@@ -1,20 +1,24 @@
-use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
-use strum_macros::{AsRefStr, Display, EnumIter, EnumString, FromRepr};
+use strum_macros::{Display, EnumIs};
 
-derive_alias! {
-    #[derive(Common!)] = #[derive(Hash, Clone, PartialEq, Eq, Deserialize, Serialize)];
-}
-
-#[derive(Common!)]
+#[derive(Hash, Copy, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+#[cfg_attr(
+    feature = "ssr",
+    derive(sqlx::Type),
+    sqlx(rename_all = "snake_case")
+)]
 pub enum WeekParity {
-    None,
+    #[default]
+    Both,
     Even,
     Odd,
 }
 
-#[derive(Common!, Copy)]
+#[derive(Hash, Copy, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
+#[cfg_attr(feature = "ssr", derive(sqlx::Type))]
+#[repr(i64)]
 pub enum Section {
+    #[default]
     One = 1,
     Two,
 }
@@ -22,27 +26,41 @@ pub enum Section {
 /// The type of class, i.e lecture, lab, tutorial
 /// Lecture classes are always weekly and require prof name
 /// Lab and tutorial classes can be bi-weekly and require section number
-#[derive(Common!)]
-pub enum ClassType {
-    Lecture(String),
-    Lab(Section, WeekParity),
-    Tutorial(Section, WeekParity),
+#[derive(Hash, Clone, PartialEq, Eq, Deserialize, Serialize, EnumIs)]
+pub enum Type {
+    Lecture {
+        prof: String,
+    },
+    Lab {
+        sec_no: Section,
+        week_parity: WeekParity,
+    },
+    Tutorial {
+        sec_no: Section,
+        week_parity: WeekParity,
+    },
 }
 
-impl std::fmt::Display for ClassType {
+impl std::fmt::Display for Type {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ClassType::Lecture(_) => write!(f, "Lec"),
-            ClassType::Lab(sec, _) => write!(f, "Lab - group {}", *sec as u8),
-            ClassType::Tutorial(sec, _) => {
-                write!(f, "Tut - group {}", *sec as u8)
+            Type::Lecture { .. } => write!(f, "Lec"),
+            Type::Lab { sec_no, .. } => {
+                write!(f, "Lab - group {}", *sec_no as i64)
+            }
+            Type::Tutorial { sec_no, .. } => {
+                write!(f, "Tut - group {}", *sec_no as i64)
             }
         }
     }
 }
 
-#[derive(Common!, Copy, EnumString, Debug, AsRefStr)]
-#[strum(serialize_all = "snake_case")]
+#[derive(Hash, Clone, PartialEq, Eq, Deserialize, Serialize, Copy)]
+#[cfg_attr(
+    feature = "ssr",
+    derive(sqlx::Type),
+    sqlx(rename_all = "snake_case")
+)]
 pub enum Building {
     Electricity,
     Mechanics,
@@ -63,14 +81,14 @@ impl std::fmt::Display for Building {
     }
 }
 
-#[derive(Common!, Debug, Builder)]
-pub struct ClassLocation {
+#[derive(Hash, Clone, PartialEq, Eq, Deserialize, Serialize)]
+pub struct Location {
     building: Building,
     floor: u8,
     room: String,
 }
 
-impl std::fmt::Display for ClassLocation {
+impl std::fmt::Display for Location {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -81,14 +99,19 @@ impl std::fmt::Display for ClassLocation {
                 1 => "1st".to_owned(),
                 2 => "2nd".to_owned(),
                 3 => "3rd".to_owned(),
-                f => format!("{}th", f),
+                f => format!("{f}th"),
             },
             self.room
         )
     }
 }
 
-#[derive(Common!, Copy, Display, EnumIter, FromRepr)]
+#[derive(Hash, Clone, PartialEq, Eq, Deserialize, Serialize, Copy, Display)]
+#[cfg_attr(
+    feature = "ssr",
+    derive(sqlx::Type),
+    sqlx(rename_all = "snake_case")
+)]
 pub enum DayOfWeek {
     Saturday,
     Sunday,
@@ -99,7 +122,7 @@ pub enum DayOfWeek {
     Friday,
 }
 
-#[derive(Common!, Copy, Default)]
+#[derive(Hash, Clone, PartialEq, Eq, Deserialize, Serialize, Copy, Default)]
 #[cfg_attr(feature = "ssr", derive(sqlx::Type), sqlx(transparent))]
 pub struct ClassId(i64);
 
@@ -110,149 +133,56 @@ impl From<i64> for ClassId {
 }
 
 // TODO: customise builder for this
-#[derive(Common!, Builder)]
+#[derive(Hash, Clone, PartialEq, Eq, Deserialize, Serialize)]
 pub struct Class {
-    #[builder(setter(into), default)]
     pub id: ClassId,
     /// The type of class, i.e lecture, lab, tutorial
     /// Lecture classes are always weekly and require prof name
     /// Lab and tutorial classes can be bi-weekly and require section number
-    pub ctype: ClassType,
+    pub ctype: Type,
     /// The class ID, e.g "CSEx102"
-    #[builder(setter(into))]
     pub code: String,
     /// The class name
-    #[builder(setter(into))]
     pub name: String,
-    pub location: ClassLocation,
+    pub location: Location,
     pub day_of_week: DayOfWeek,
     /// inclusive range, 0-indexed
-    #[builder(setter(custom))]
     pub period: (usize, usize),
-}
-
-impl ClassBuilder {
-    pub fn period(&mut self, start: usize, end: usize) -> &mut Self {
-        self.period = Some((start, end));
-        self
-    }
 }
 
 #[cfg(feature = "ssr")]
 pub mod db {
-    use super::Class;
-
+    use super::*;
     pub struct ClassRow {
         pub id: i64,
         pub ctype: String,
         pub prof: String,
         pub name: String,
         pub code: String,
-        pub building: String,
+        pub building: Building,
         pub floor: i64,
         pub room: String,
-        pub day_of_week: i64,
+        pub day_of_week: DayOfWeek,
         pub period_start: i64,
         pub period_end: i64,
-        pub section: i64,
-        pub week_parity: Option<i64>,
+        pub section: Section,
+        pub week_parity: WeekParity,
     }
 
-    #[derive(Debug)]
-    pub struct InvalidValue {
-        field: &'static str,
-        val: String,
-    }
-
-    impl std::fmt::Display for InvalidValue {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            write!(f, "Invalid value: '{}' for '{}'", self.val, self.field)
-        }
-    }
-
-    impl std::error::Error for InvalidValue {}
-
-    fn invalid<T>(field: &'static str, val: T) -> InvalidValue
-    where
-        T: std::fmt::Display,
-    {
-        InvalidValue {
-            field,
-            val: val.to_string(),
-        }
-    }
-
-    impl TryInto<Class> for ClassRow {
-        type Error = InvalidValue;
-        fn try_into(self) -> Result<Class, Self::Error> {
-            use crate::class::*;
-
-            let section = match self.section {
-                1 => Section::One,
-                2 => Section::Two,
-                v => return Err(invalid("section", v)),
-            };
-
-            let parity = match self.week_parity {
-                Some(0) => WeekParity::Even,
-                Some(1) => WeekParity::Odd,
-                None => WeekParity::None,
-                Some(a) => return Err(invalid("week_parity", a)),
-            };
-
+    /// Since the db has constrains over the fields, a `TryInto` is not needed.
+    #[allow(clippy::from_over_into)]
+    impl Into<Class> for ClassRow {
+        fn into(self) -> Class {
             let ctype = match self.ctype.as_str() {
-                "lec" => ClassType::Lecture(self.prof),
-                "lab" => ClassType::Lab(section, parity),
-                "tut" => ClassType::Tutorial(section, parity),
-                v => return Err(invalid("ctype", v)),
-            };
-
-            Ok(Class {
-                id: ClassId(self.id),
-                ctype,
-                code: self.code,
-                name: self.name,
-                location: ClassLocation {
-                    building: {
-                        let bld = self.building;
-                        bld.as_str()
-                            .try_into()
-                            .map_err(|_| invalid("building", bld))?
-                    },
-                    floor: self.floor as u8,
-                    room: self.room,
+                "lec" => Type::Lecture { prof: self.prof },
+                "lab" => Type::Lab {
+                    sec_no: self.section,
+                    week_parity: self.week_parity,
                 },
-                day_of_week: {
-                    let dow = self.day_of_week;
-                    DayOfWeek::from_repr(dow as usize)
-                        .ok_or(invalid("day_of_week", dow))?
+                "tut" => Type::Tutorial {
+                    sec_no: self.section,
+                    week_parity: self.week_parity,
                 },
-                period: (self.period_start as usize, self.period_end as usize),
-            })
-        }
-    }
-
-    impl ClassRow {
-        pub fn into_class(self) -> Class {
-            use crate::class::*;
-
-            let section = match self.section {
-                1 => Section::One,
-                2 => Section::Two,
-                _ => unreachable!(),
-            };
-
-            let parity = match self.week_parity {
-                Some(0) => WeekParity::Even,
-                Some(1) => WeekParity::Odd,
-                None => WeekParity::None,
-                _ => unreachable!(),
-            };
-
-            let ctype = match self.ctype.as_str() {
-                "lec" => ClassType::Lecture(self.prof),
-                "lab" => ClassType::Lab(section, parity),
-                "tut" => ClassType::Tutorial(section, parity),
                 _ => unreachable!(),
             };
 
@@ -261,195 +191,14 @@ pub mod db {
                 ctype,
                 code: self.code,
                 name: self.name,
-                location: ClassLocation {
-                    building: {
-                        let bld = self.building;
-                        bld.as_str().try_into().unwrap()
-                    },
+                location: Location {
+                    building: self.building,
                     floor: self.floor as u8,
                     room: self.room,
                 },
-                day_of_week: {
-                    let dow = self.day_of_week;
-                    DayOfWeek::from_repr(dow as usize).unwrap()
-                },
+                day_of_week: self.day_of_week,
                 period: (self.period_start as usize, self.period_end as usize),
             }
         }
     }
 }
-
-// TEMP:
-// pub fn data() -> [Class; 14] {
-//     use crate::class::{Section as S, WeekParity as P};
-//     [
-//         Class {
-//             ctype: ClassType::Lab(S::One, P::None),
-//             code: "CSE 127".to_string(),
-//             name: "Data Structures I".to_string(),
-//             location: ClassLocation {
-//                 building: Building::Electricity,
-//                 floor: 0,
-//                 room: "Lab 7".to_string(),
-//             },
-//             day_of_week: DayOfWeek::Saturday,
-//             period: (4, 5),
-//         },
-//         Class {
-//             ctype: ClassType::Tutorial(S::One, P::None),
-//             code: "CSE 136".to_string(),
-//             name: "Digital Logic Circuits I".to_string(),
-//             location: ClassLocation {
-//                 building: Building::Electricity,
-//                 floor: 7,
-//                 room: "Class 72".to_string(),
-//             },
-//             day_of_week: DayOfWeek::Saturday,
-//             period: (6, 6),
-//         },
-//         Class {
-//             ctype: ClassType::Lab(S::One, P::None),
-//             code: "EEC 116".to_string(),
-//             name: "Analysis of Electrical Circuits".to_string(),
-//             location: ClassLocation {
-//                 building: Building::Electricity,
-//                 floor: 3,
-//                 room: "Lab Circuits".to_string(),
-//             },
-//             day_of_week: DayOfWeek::Saturday,
-//             period: (7, 7),
-//         },
-//         Class {
-//             ctype: ClassType::Lecture("أ.د. مجدي عبد العظيم".to_string()),
-//             code: "CSE 136".to_string(),
-//             name: "Digital Logic Circuits I".to_string(),
-//             location: ClassLocation {
-//                 building: Building::PreparatorySouth,
-//                 floor: 0,
-//                 room: "L3".to_string(),
-//             },
-//             day_of_week: DayOfWeek::Saturday,
-//             period: (8, 9),
-//         },
-//         Class {
-//             ctype: ClassType::Lecture("أ.د.م. مروان تركي".to_string()),
-//             code: "CSE 127".to_string(),
-//             name: "Data Structures I".to_string(),
-//             location: ClassLocation {
-//                 building: Building::Ssp,
-//                 floor: 2,
-//                 room: "C39".to_string(),
-//             },
-//             day_of_week: DayOfWeek::Saturday,
-//             period: (10, 11),
-//         },
-//         Class {
-//             ctype: ClassType::Tutorial(S::One, P::None),
-//             code: "EEC 116".to_string(),
-//             name: "Analysis of Electrical Circuits".to_string(),
-//             location: ClassLocation {
-//                 building: Building::Electricity,
-//                 floor: 7,
-//                 room: "Class 701".to_string(),
-//             },
-//             day_of_week: DayOfWeek::Sunday,
-//             period: (2, 3),
-//         },
-//         Class {
-//             ctype: ClassType::Lecture("د. ميرفت ميخائيل".to_string()),
-//             code: "EMP x19".to_string(),
-//             name: "Probability and Statistics".to_string(),
-//             location: ClassLocation {
-//                 building: Building::Electricity,
-//                 floor: 0,
-//                 room: "Class 103".to_string(),
-//             },
-//             day_of_week: DayOfWeek::Sunday,
-//             period: (5, 7),
-//         },
-//         Class {
-//             ctype: ClassType::Lab(S::One, P::None),
-//             code: "CSE 136".to_string(),
-//             name: "Digital Logic Circuits I".to_string(),
-//             location: ClassLocation {
-//                 building: Building::Electricity,
-//                 floor: 5,
-//                 room: "Lab Logic".to_string(),
-//             },
-//             day_of_week: DayOfWeek::Sunday,
-//             period: (8, 9),
-//         },
-//         Class {
-//             ctype: ClassType::Lecture("د. عادل الفحار".to_string()),
-//             code: "EEC 116".to_string(),
-//             name: "Analysis of Electrical Circuits".to_string(),
-//             location: ClassLocation {
-//                 building: Building::Ssp,
-//                 floor: 1,
-//                 room: "C26".to_string(),
-//             },
-//             day_of_week: DayOfWeek::Tuesday,
-//             period: (4, 5),
-//         },
-//         Class {
-//             ctype: ClassType::Tutorial(S::One, P::None),
-//             code: "CSE 127".to_string(),
-//             name: "Data Structures I".to_string(),
-//             location: ClassLocation {
-//                 building: Building::Ssp,
-//                 floor: 2,
-//                 room: "C44".to_string(),
-//             },
-//             day_of_week: DayOfWeek::Tuesday,
-//             period: (6, 6),
-//         },
-//         Class {
-//             ctype: ClassType::Tutorial(S::One, P::None),
-//             code: "EMP x19".to_string(),
-//             name: "Probability and Statistics".to_string(),
-//             location: ClassLocation {
-//                 building: Building::Ssp,
-//                 floor: 0,
-//                 room: "C11".to_string(),
-//             },
-//             day_of_week: DayOfWeek::Tuesday,
-//             period: (7, 7),
-//         },
-//         Class {
-//             ctype: ClassType::Lecture("أ.د.م. أحمد التراس".to_string()),
-//             code: "TRN x21".to_string(),
-//             name: "Technical Writing".to_string(),
-//             location: ClassLocation {
-//                 building: Building::Ssp,
-//                 floor: 2,
-//                 room: "C40".to_string(),
-//             },
-//             day_of_week: DayOfWeek::Tuesday,
-//             period: (8, 9),
-//         },
-//         Class {
-//             ctype: ClassType::Tutorial(S::One, P::None),
-//             code: "EMP 116".to_string(),
-//             name: "Differential Equations".to_string(),
-//             location: ClassLocation {
-//                 building: Building::PreparatorySouth,
-//                 floor: 1,
-//                 room: "C8".to_string(),
-//             },
-//             day_of_week: DayOfWeek::Wednesday,
-//             period: (0, 0),
-//         },
-//         Class {
-//             ctype: ClassType::Lecture("أ.د. عمرو عبد الرازاق".to_string()),
-//             code: "EMP 116".to_string(),
-//             name: "Differential Equations".to_string(),
-//             location: ClassLocation {
-//                 building: Building::PreparatoryNorth,
-//                 floor: 0,
-//                 room: "L5".to_string(),
-//             },
-//             day_of_week: DayOfWeek::Wednesday,
-//             period: (3, 5),
-//         },
-//     ]
-// }

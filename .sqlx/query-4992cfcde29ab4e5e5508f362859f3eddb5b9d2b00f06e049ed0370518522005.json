@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\n            SELECT \n                classes_view.*\n            FROM classes_view\n            INNER JOIN term_subjects as ts\n            INNER JOIN term_subscribers as tsub\n                ON ts.id = tsub.term_subject_id\n            WHERE tsub.student_id = ?;\n        ",
+  "query": "\n            SELECT cv.* FROM classes_view AS cv \n            INNER JOIN term_subjects AS ts ON cv.id = ts.tut_id\n            WHERE ts.id = ?\n        ",
   "describe": {
     "columns": [
       {
@@ -88,5 +88,5 @@
       false
     ]
   },
-  "hash": "a710cc204941a51a9085c5053ff63ec13badbfe6bae510792f5c4864c32f93b6"
+  "hash": "4992cfcde29ab4e5e5508f362859f3eddb5b9d2b00f06e049ed0370518522005"
 }

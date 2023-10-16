@@ -1,11 +1,9 @@
+pub mod and_then_macro;
 use std::str::FromStr;
 
 use leptos::*;
 use leptos_router::*;
 use wasm_bindgen::JsCast;
-
-// TEMP:
-pub type UserId = String;
 
 pub trait Unzip<T1, T2, const N: usize> {
     fn unzip(self) -> ([T1; N], [T2; N]);
@@ -31,6 +29,7 @@ impl<T1, T2, const N: usize> Unzip<T1, T2, N> for [(T1, T2); N] {
         unsafe { (mem::transmute_copy(&first), mem::transmute_copy(&second)) }
     }
 }
+
 /// same as `leptos_router::create_query_signal` but with NavigateOptions::replace = true
 pub fn create_query_signal<T>(
     key: impl Into<Oco<'static, str>>,
@@ -101,8 +100,9 @@ pub fn get_radio_value(name: &str) -> Option<String> {
 /// This is a macro that will inline the contents of an svg file.
 /// Adds useful attributes to svg container
 /// # Usage:
-/// `icon!("path/to/icon", ...classes)`
+/// `icon!("path/to/icon", "classes")`
 /// ps. path is relative to assets/icons/, `.svg` must be omitted
+/// TODO: Replace with `leptos-icon`
 #[macro_export]
 macro_rules! icon {
     ($icon_name:literal, $class:expr) => {
@@ -124,12 +124,5 @@ macro_rules! icon {
         leptos::leptos_dom::html::span()
             .attr("class", ("flex"))
             .attr("inner_html", (inner_html))
-    }};
-}
-
-#[macro_export]
-macro_rules! include_str_root{
-    ($path:literal) => {{
-        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/", $path))
     }};
 }

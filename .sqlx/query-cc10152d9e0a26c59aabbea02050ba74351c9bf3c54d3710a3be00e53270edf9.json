@@ -1,0 +1,38 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            SELECT s.level AS \"level: u8\",\n                   s.name,\n                   s.code,\n                   json_group_array(ts.id) AS \"choices!: sqlx::types::Json<Vec<SubjectId>>\"\n            FROM subjects AS s\n            INNER JOIN term_subjects AS ts ON ts.subject_id = s.id\n            LEFT JOIN completed AS c ON s.id = c.subject_id AND c.student_id = ?1\n            WHERE c.student_id IS NULL\n              AND NOT EXISTS (\n                SELECT value\n                FROM json_each(s.pre_req)\n                WHERE NOT EXISTS (\n                  SELECT *\n                  FROM completed AS c2\n                  WHERE c2.student_id = ?1\n                    AND c2.subject_id = value\n                )\n              )\n            GROUP BY s.id\n            ORDER By s.level, s.name;\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "level: u8",
+        "ordinal": 0,
+        "type_info": "Int64"
+      },
+      {
+        "name": "name",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "code",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "choices!: sqlx::types::Json<Vec<SubjectId>>",
+        "ordinal": 3,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      null
+    ]
+  },
+  "hash": "cc10152d9e0a26c59aabbea02050ba74351c9bf3c54d3710a3be00e53270edf9"
+}

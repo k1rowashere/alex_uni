@@ -6,14 +6,14 @@ SELECT DISTINCT
   professors.name as prof,
   subjects.name,
   subjects.code,
-  locations.building,
+  locations.building as "building: Building",
   locations.floor,
   locations.room,
-  classes.day_of_week,
+  classes.day_of_week as "day_of_week: DayOfWeek",
   classes.period_start,
   classes.period_end,
-  classes.week_parity,
-  term_subjects.sec_no
+  classes.week_parity as "week_parity: WeekParity",
+  term_subjects.sec_no as "section: Section"
 FROM
   term_subjects
   INNER JOIN classes ON term_subjects.lec_id = classes.id

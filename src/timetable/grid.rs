@@ -1,8 +1,8 @@
 use crate::utils::Unzip;
 use leptos::*;
 
-use super::Class;
 use super::*;
+use crate::class::Class;
 
 #[derive(Clone, PartialEq)]
 enum TimetableCell {
@@ -49,7 +49,7 @@ fn grid_from_classes(classes: Vec<Class>) -> [[TimetableCell; 12]; 6] {
 pub fn timetable_grid_loading() -> impl IntoView {
     view! {
         <table class="timetable_grid skeleton w-full h-[70vh]">
-            <thead>
+        <thead>
                 <tr>
                     <td class="!w-[unset] px-2"></td>
                     {[|| view! {
@@ -84,11 +84,10 @@ pub fn timetable_grid(
     #[prop(into)] data: MaybeSignal<Vec<Class>>,
     #[prop(optional, into)] flags: MaybeSignal<TimetableFlags>,
 ) -> impl IntoView {
-    let flags = store_value(flags);
-    let time_style = create_memo(move |_| flags().get().time_style);
-    let show_location = create_memo(move |_| flags().get().show_loc);
-    let show_prof = create_memo(move |_| flags().get().show_prof);
-    let show_code = create_memo(move |_| flags().get().show_code);
+    let time_style = create_memo(move |_| flags.with(|f| f.time_style));
+    let show_location = create_memo(move |_| flags.with(|f| f.show_loc));
+    let show_prof = create_memo(move |_| flags.with(|f| f.show_prof));
+    let show_code = create_memo(move |_| flags.with(|f| f.show_code));
 
     let (grid, set_grid) = create_grid_signal(data.get_untracked());
 
@@ -203,8 +202,8 @@ fn timetable_item_wrapped(
 ) -> impl IntoView {
     use TimetableCell as Cell;
     move || match cell() {
-        Cell::None => view! { <td class="w-[calc(200%/25)]"></td> }.into_view(),
-        Cell::Join => ().into_view(),
+        Cell::None => view! { <td class="w-[calc(200%/25)]"/> }.into_view(),
+        Cell::Join => view! { <td class="hidden"/> }.into_view(),
         Cell::Some(class) => {
             let colspan = class.period.1 - class.period.0 + 1;
             view! {
@@ -236,15 +235,21 @@ pub fn timetable_cell(
         "before:content-['_-_']"
     };
 
+    let bg_color = match class.ctype {
+        Type::Lecture { .. } => "dark:bg-red-900 bg-red-200",
+        Type::Lab { .. } => "dark:bg-cyan-800 bg-cyan-200",
+        Type::Tutorial { .. } => "dark:bg-gray-800 bg-gray-200",
+    };
+
     view! {
-        <td colspan=colspan class=format!("p-1 {}", class.ctype.to_bg_color())>
+        <td colspan=colspan class=format!("p-1 {bg_color}")>
             <span class="text-xs">{format!("[{}] ", class.ctype)}</span>
             <Show when=show_code fallback=|| ()>
                 <span class="text-xs">{&class.code}</span>
             </Show>
             <span class=format!("font-bold {}", style)>{&class.name}</span>
             <Show when=show_prof fallback=|| ()>
-                {if let ClassType::Lecture(prof) = &class.ctype {
+                {if let Type::Lecture{prof} = &class.ctype {
                     view! { <span class=format!("text-xs font-thin {}", style)>{prof}</span> }
                         .into_view()
                 } else {

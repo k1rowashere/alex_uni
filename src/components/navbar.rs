@@ -10,8 +10,9 @@ use crate::utils::unfocus_on_select;
 
 #[component]
 pub fn navbar() -> impl IntoView {
-    let logout = expect_context::<LogoutAction>();
     const ICON: &str = "mr-2 flex content-center";
+    let logout = expect_context::<LogoutAction>();
+
     view! {
         <nav class="sticky top-0 z-50 bg-inherit px-5 py-1 rounded-b flex font-semibold gap-2">
             <A class="font-extrabold text-2xl flex gap-2 flex-grow my-auto" href="/" exact=true>

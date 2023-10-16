@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            SELECT ts.id AS \"id: SubjectId\" \n            FROM term_subjects as ts\n            INNER JOIN term_subscribers as tsub\n            ON ts.id = tsub.term_subject_id\n            WHERE tsub.student_id = ?;\n            ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id: SubjectId",
+        "ordinal": 0,
+        "type_info": "Int64"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "1c51d861d0aca37e85aa140de15f2a3a84efa7ab86a68149d72ca57afd8a2010"
+}

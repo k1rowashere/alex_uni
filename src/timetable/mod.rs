@@ -7,8 +7,8 @@ use strum_macros::{Display, EnumString};
 pub use crate::class::{Class, *};
 use crate::components::checkbox::Checkbox;
 use crate::icon;
-use crate::timetable::grid::{TimetableGrid, TimetableGridLoading};
-use crate::timetable::list::{TimetableList, TimetableListLoading};
+pub use crate::timetable::grid::{TimetableGrid, TimetableGridLoading};
+pub use crate::timetable::list::{TimetableList, TimetableListLoading};
 use crate::utils::get_radio_value;
 
 pub const PERIOD_START_TIME: [&str; 12] = [
@@ -21,21 +21,7 @@ pub const PERIOD_END_TIME: [&str; 12] = [
     "02:50 PM", "03:40 PM", "04:40 PM", "05:30 PM", "06:30 PM", "07:20 PM",
 ];
 
-trait ToBgClass {
-    fn to_bg_color(&self) -> &'static str;
-}
-
-impl ToBgClass for ClassType {
-    fn to_bg_color(&self) -> &'static str {
-        match self {
-            ClassType::Lecture(_) => "dark:bg-red-900 bg-red-200",
-            ClassType::Lab(_, _) => "dark:bg-cyan-800 bg-cyan-200",
-            ClassType::Tutorial(_, _) => "dark:bg-gray-800 bg-gray-200",
-        }
-    }
-}
-
-#[derive(PartialEq, Clone, Default, Display, EnumString)]
+#[derive(Display, EnumString, PartialEq, Copy, Clone, Default)]
 #[strum(serialize_all = "snake_case")]
 pub enum View {
     #[default]
@@ -43,7 +29,7 @@ pub enum View {
     List,
 }
 
-#[derive(PartialEq, Clone, Default, Display, EnumString)]
+#[derive(PartialEq, Copy, Clone, Default, Display, EnumString)]
 #[strum(serialize_all = "snake_case")]
 pub enum TimeStyle {
     Times,
@@ -52,7 +38,7 @@ pub enum TimeStyle {
     Both,
 }
 
-#[derive(PartialEq, Clone, Default)]
+#[derive(PartialEq, Copy, Clone, Default)]
 pub struct TimetableFlags {
     pub view: View,
     pub time_style: TimeStyle,
@@ -61,17 +47,21 @@ pub struct TimetableFlags {
     pub show_code: bool,
 }
 
-#[server]
-async fn get_user_classes() -> Result<Vec<Class>, ServerFnError> {
+#[server(, , "GetJson")]
+pub async fn get_std_classes() -> Result<Vec<Class>, ServerFnError> {
     use crate::class::db::ClassRow;
+    use crate::login::user_id_from_jwt;
 
+    let res = expect_context::<leptos_actix::ResponseOptions>();
     let req = expect_context::<actix_web::HttpRequest>();
     let pool = req
         .app_data::<sqlx::Pool<sqlx::Sqlite>>()
         .ok_or(ServerFnError::ServerError("No DB context provided".into()))?;
 
-    // TEMP: get student info from jwt cookie
-    let student_id = 0;
+    let Some(student_id) = user_id_from_jwt(&req) else {
+        res.set_status(actix_web::http::StatusCode::UNAUTHORIZED);
+        return Ok(vec![]);
+    };
 
     let classes_db = sqlx::query_as!(
         ClassRow,
@@ -109,7 +99,7 @@ async fn get_user_classes() -> Result<Vec<Class>, ServerFnError> {
 #[component]
 pub fn timetable_page() -> impl IntoView {
     let table_data =
-        create_resource(|| (), |_| async move { get_user_classes().await });
+        create_resource(|| (), |_| async move { get_std_classes().await });
     let (timetable_settings, flags) = timetable_settings_inner();
     let view = create_memo(move |_| flags().view);
 

@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "\n                SELECT \n                    ts.group_no,\n                    ts.max_seats\n                FROM term_subjects AS ts \n                WHERE ts.id = ?\n            ",
+  "describe": {
+    "columns": [
+      {
+        "name": "group_no",
+        "ordinal": 0,
+        "type_info": "Int64"
+      },
+      {
+        "name": "max_seats",
+        "ordinal": 1,
+        "type_info": "Int64"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "265034843a8cb0fc88fdf41339471df98b549a29dece6416f06562c31e59a6d5"
+}
