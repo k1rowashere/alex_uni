@@ -34,7 +34,7 @@ fn grid_from_classes(classes: Vec<Class>) -> [[TimetableCell; 12]; 6] {
     use TimetableCell as Cell;
     let mut timetable = from_fn(|_| from_fn(|_| Cell::None));
     for s in classes {
-        let row = s.day_of_week as usize;
+        let row = s.day as usize;
         let st = s.period.0;
         let end = s.period.1;
         timetable[row][st] = Cell::Some(s);
@@ -46,48 +46,14 @@ fn grid_from_classes(classes: Vec<Class>) -> [[TimetableCell; 12]; 6] {
 }
 
 #[component]
-pub fn timetable_grid_loading() -> impl IntoView {
-    view! {
-        <table class="timetable_grid skeleton w-full h-[70vh]">
-        <thead>
-                <tr>
-                    <td class="!w-[unset] px-2"></td>
-                    {[|| view! {
-                        <th class="p-1">
-                            <div class="mx-auto rounded-xl w-[2ch] h-4"></div>
-                            <div class="mx-auto rounded-xl w-[7ch] h-4"></div>
-                            <div class="mx-auto rounded-xl w-[8ch] h-4"></div>
-                        </th>
-                    }; 12] .collect_view()}
-                </tr>
-            </thead>
-            <tbody>
-                {[|| view! {
-                    <tr>
-                        <th>
-                            <div class="rounded-xl w-[3ch] h-4"></div>
-                        </th>
-                        {[|| view! {
-                            <td class="p-1">
-                                <div class="mx-auto rounded-xl w-[8ch] h-4"></div>
-                            </td>
-                        }; 12].collect_view()}
-                    </tr>
-                }; 6].collect_view()}
-            </tbody>
-        </table>
-    }
-}
-
-#[component]
-pub fn timetable_grid(
+pub fn TimetableGrid(
     #[prop(into)] data: MaybeSignal<Vec<Class>>,
     #[prop(optional, into)] flags: MaybeSignal<TimetableFlags>,
 ) -> impl IntoView {
-    let time_style = create_memo(move |_| flags.with(|f| f.time_style));
-    let show_location = create_memo(move |_| flags.with(|f| f.show_loc));
-    let show_prof = create_memo(move |_| flags.with(|f| f.show_prof));
-    let show_code = create_memo(move |_| flags.with(|f| f.show_code));
+    let time_style = Memo::new(move |_| flags.with(|f| f.time_style));
+    let show_location = Memo::new(move |_| flags.with(|f| f.show_loc));
+    let show_prof = Memo::new(move |_| flags.with(|f| f.show_prof));
+    let show_code = Memo::new(move |_| flags.with(|f| f.show_code));
 
     let (grid, set_grid) = create_grid_signal(data.get_untracked());
 
@@ -156,73 +122,43 @@ pub fn timetable_grid(
 }
 
 #[component]
-fn timetable_grid_row(
+fn TimetableGridRow(
     i: usize,
     #[prop(into)] row: [Signal<TimetableCell>; 12],
     #[prop(default = true.into(), into)] show_prof: MaybeSignal<bool>,
     #[prop(default = true.into(), into)] show_location: MaybeSignal<bool>,
     #[prop(default = true.into(), into)] show_code: MaybeSignal<bool>,
 ) -> impl IntoView {
-    let usize_to_day = |i| match i {
-        0 => "Sat",
-        1 => "Sun",
-        2 => "Mon",
-        3 => "Tue",
-        4 => "Wed",
-        5 => "Thu",
-        6 => "Fri",
-        _ => unreachable!(),
+    let map_cell = move |cell: Signal<TimetableCell>| {
+        use TimetableCell as Cell;
+        move || match cell() {
+            Cell::None => view! { <td class="w-[calc(200%/25)]"/>}.into_view(),
+            Cell::Join => view! { <td class="hidden"/> }.into_view(),
+            Cell::Some(class) => component_view(
+                TimetableCell,
+                component_props_builder(&TimetableCell)
+                    .class(&class)
+                    .is_grid(true)
+                    .colspan(class.period.1 - class.period.0 + 1)
+                    .show_location(show_location)
+                    .show_prof(show_prof)
+                    .show_code(show_code)
+                    .build(),
+            ),
+        }
     };
 
     view! {
         <tr>
-            <th class="text-left px-2">{usize_to_day(i)}</th>
-            {
-                row.map(|cell|
-                    view!{
-                        <TimetableItemWrapped
-                            cell=cell
-                            show_location=show_location
-                            show_prof=show_prof
-                            show_code=show_code
-                        />
-                    }
-                    )
-            }
+            <th class="text-left px-2">{DayOfWeek::from_repr(i).map(|d| d.short_name())}</th>
+            {row.map(map_cell).collect_view()}
         </tr>
     }
 }
 
 #[component]
-fn timetable_item_wrapped(
-    #[prop(into)] cell: MaybeSignal<TimetableCell>,
-    #[prop(default = true.into(), into)] show_prof: MaybeSignal<bool>,
-    #[prop(default = true.into(), into)] show_location: MaybeSignal<bool>,
-    #[prop(default = true.into(), into)] show_code: MaybeSignal<bool>,
-) -> impl IntoView {
-    use TimetableCell as Cell;
-    move || match cell() {
-        Cell::None => view! { <td class="w-[calc(200%/25)]"/> }.into_view(),
-        Cell::Join => view! { <td class="hidden"/> }.into_view(),
-        Cell::Some(class) => {
-            let colspan = class.period.1 - class.period.0 + 1;
-            view! {
-                <TimetableCell
-                    class=class
-                    is_grid=true
-                    colspan=colspan
-                    show_location=show_location
-                    show_prof=show_prof
-                    show_code=show_code
-                />
-            }
-        }
-    }
-}
-
-#[component]
-pub fn timetable_cell(
-    class: Class,
+pub fn TimetableCell<'a>(
+    class: &'a Class,
     #[prop(default = 1)] colspan: usize,
     #[prop(default = false)] is_grid: bool,
     #[prop(default = true.into(), into)] show_prof: MaybeSignal<bool>,
@@ -240,6 +176,8 @@ pub fn timetable_cell(
         Type::Lab { .. } => "dark:bg-cyan-800 bg-cyan-200",
         Type::Tutorial { .. } => "dark:bg-gray-800 bg-gray-200",
     };
+
+    let class = class.clone();
 
     view! {
         <td colspan=colspan class=format!("p-1 {bg_color}")>

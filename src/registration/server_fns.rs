@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 
-use super::{SubjectId, SubjectSelect};
+use super::{SubjectChoices, SubjectId};
 use leptos::*;
 
 #[cfg(feature = "ssr")]
@@ -95,10 +95,10 @@ pub(super) async fn subject_by_id(
 /// if `None` given, returns the remaining seats for all subjects
 #[cfg(feature = "ssr")]
 pub async fn get_rem_seats(
-    subjects: Option<&[SubjectId]>,
+    subjects: &[SubjectId],
     pool: sqlx::SqlitePool,
 ) -> Result<RemSeatsMsg, ServerFnError> {
-    let query = if let Some(subjects) = subjects {
+    let query = if !subjects.is_empty() {
         let query_str = format!(
             r#"
                 SELECT ts.id, 
@@ -136,12 +136,8 @@ pub async fn get_rem_seats(
 
 #[server]
 pub async fn register_subjects(
-    #[server(default)] subjects: BTreeSet<SubjectId>,
+    #[server(default)] new: BTreeSet<SubjectId>,
 ) -> Result<(), ServerFnError> {
-    if subjects.is_empty() {
-        return Ok(());
-    }
-
     // TODO: Collision detection
     //       Deduping
     //       (preferably on DB):
@@ -157,6 +153,7 @@ pub async fn register_subjects(
         .app_data::<sqlx::Pool<sqlx::Sqlite>>()
         .expect("DB ctx not found");
 
+    // TODO: move this to a middleware
     let student_id = if let Some(uid) = crate::login::user_id_from_jwt(&req) {
         uid
     } else {
@@ -165,51 +162,67 @@ pub async fn register_subjects(
         return Ok(());
     };
 
+    let diff: Vec<_> = {
+        let prev = sqlx::query_scalar!(
+            r#"
+            SELECT tsub.term_subject_id AS "id: SubjectId"
+            FROM term_subscribers as tsub
+            WHERE tsub.student_id = ?
+        "#,
+            student_id
+        )
+        .fetch_all(pool)
+        .await?
+        .into_iter()
+        .collect();
+
+        new.symmetric_difference(&prev).copied().collect()
+    };
+
+    if diff.is_empty() {
+        return Ok(());
+    }
+
     let mut tx = pool.begin().await?;
 
-    sqlx::query(
-        r#"
-            DELETE FROM term_subscribers
-            WHERE student_id = ?
-        "#,
-    )
-    .bind(student_id)
-    .execute(&mut *tx)
-    .await?;
+    sqlx::query("DELETE FROM term_subscribers WHERE student_id = ?")
+        .bind(student_id)
+        .execute(&mut *tx)
+        .await?;
 
-    // Insert into term_subscribers
-    // using string formatting because sqlx doesn't support variable length bind params
-    let query_str = format!(
-        r#"
+    if !new.is_empty() {
+        // Insert into term_subscribers
+        // using string formatting because sqlx doesn't support variable length bind params
+        let query_str = format!(
+            r#"
             INSERT INTO term_subscribers (student_id, term_subject_id) 
             SELECT ?, sid.* 
             FROM (VALUES (?){}) AS sid
-        "#,
-        ", (?)".repeat(subjects.len() - 1)
-    );
+            "#,
+            ", (?)".repeat(new.len() - 1)
+        );
 
-    let mut query = sqlx::query(&query_str);
-    query = query.bind(student_id);
-    for s in &subjects {
-        query = query.bind(s);
+        let mut query = sqlx::query(&query_str);
+        query = query.bind(student_id);
+        for s in &new {
+            query = query.bind(s);
+        }
+
+        query.execute(&mut *tx).await?;
     }
-    query.execute(&mut *tx).await?;
 
     tx.commit().await?;
 
-    // FIXME: Removed subjects are not getting updated
-    //        Possible fix: - use a diff on the db to figure out updated subjects
-    //                      - or just update all the subjects (obv bad for perf)
-
     // Broadcast `rem_seats` changes to ws actors
     Broker::<SystemBroker>::issue_async(
-        get_rem_seats(Some(&subjects), pool.clone()).await?,
+        get_rem_seats(&diff, pool.clone()).await?,
     );
     Ok(())
 }
 
-#[server(,, "GetJson")]
-pub async fn get_subbed_subjects() -> Result<Vec<SubjectId>, ServerFnError> {
+#[server(encoding = "GetJson")]
+pub async fn get_subbed_subjects() -> Result<BTreeSet<SubjectId>, ServerFnError>
+{
     use crate::login::user_id_from_jwt;
 
     let res = expect_context::<leptos_actix::ResponseOptions>();
@@ -220,10 +233,10 @@ pub async fn get_subbed_subjects() -> Result<Vec<SubjectId>, ServerFnError> {
 
     let Some(student_id) = user_id_from_jwt(&req) else {
         res.set_status(actix_web::http::StatusCode::UNAUTHORIZED);
-        return Ok(vec![]);
+        return Ok(BTreeSet::new());
     };
 
-    Ok(sqlx::query_scalar!(
+    let query = sqlx::query_scalar!(
         r#"
             SELECT ts.id AS "id: SubjectId" 
             FROM term_subjects as ts
@@ -234,12 +247,14 @@ pub async fn get_subbed_subjects() -> Result<Vec<SubjectId>, ServerFnError> {
         student_id
     )
     .fetch_all(pool)
-    .await?)
+    .await?;
+
+    Ok(BTreeSet::from_iter(query))
 }
 
-#[server(,, "GetJson")]
+#[server(encoding = "GetJson")]
 pub async fn get_registerable_subjects(
-) -> Result<Vec<SubjectSelect>, ServerFnError> {
+) -> Result<Vec<SubjectChoices>, ServerFnError> {
     use futures::{stream, StreamExt, TryStreamExt};
 
     let req = expect_context::<actix_web::HttpRequest>();
@@ -284,7 +299,7 @@ pub async fn get_registerable_subjects(
                 .try_filter_map(|s| async move { Ok(s) })
                 .try_collect()
                 .await?;
-            Ok(SubjectSelect {
+            Ok(SubjectChoices {
                 level: s.level,
                 name: s.name,
                 code: s.code,

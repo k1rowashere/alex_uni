@@ -36,7 +36,7 @@ impl Actor for RemSeatsWs {
         let pool = self.db_pool.clone();
         // sends rem_seats to client on startup
         ctx.add_message_stream(futures::stream::once(async move {
-            super::server_fns::get_rem_seats(None, pool)
+            super::server_fns::get_rem_seats(&[], pool)
                 .await
                 .unwrap_or(RemSeatsMsg(Vec::new()))
         }));

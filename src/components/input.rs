@@ -10,7 +10,7 @@ pub fn input(
     view! {
         <div class="relative w-full">
             <input
-                class="peer p-2 border border-gray-300 dark:border-gray-500 rounded focus:!border-blue-500 outline-none w-full"
+                class="peer p-2 border border-gray-300 dark:border-gray-500 rounded focus:!border-indigo-500 outline-none w-full"
                 id=&id
                 name=&id
                 required=required

@@ -10,23 +10,22 @@ crate-type = ["cdylib", "rlib"]
 actix-web = { version = "4", optional = true, features = ["macros"] }
 actix-files = { version = "0.6", optional = true }
 http = { version = "0.2", optional = true }
-leptos_actix = { version = "0.5.0", optional = true }
-leptos = { version = "0.5.0", features = ["nightly"] }
-leptos_meta = { version = "0.5.0", features = ["nightly"] }
-leptos_router = { version = "0.5.0", features = ["nightly"] }
+leptos_actix = { version = "0.5.2", optional = true }
+leptos = { version = "0.5.2", features = ["nightly"] }
+leptos_meta = { version = "0.5.2", features = ["nightly"] }
+leptos_router = { version = "0.5.2", features = ["nightly"] }
 console_error_panic_hook = "0.1"
 cfg-if = "1"
-wasm-bindgen = "=0.2.87"
+wasm-bindgen = "=0.2.88"
 web-sys = "0.3.64"
 js-sys = "0.3.64"
 derive_builder = "0.12.0"
 bcrypt = { version = "0.15.0", optional = true }
-jsonwebtoken = { version = "8.3.0", optional = true }
+jsonwebtoken = { version = "9.0", optional = true }
 chrono = { version = "0.4.28", optional = true, features = ["serde"] }
 strum_macros = "0.25.2"
 strum = "0.25.0"
 rand = "0.8.5"
-macro_rules_attribute = { version = "0.2.0", features = ["better-docs"] }
 sqlx = { version = "0.7.1", optional = true, features = [
   "runtime-tokio",
   "json",
@@ -35,12 +34,12 @@ sqlx = { version = "0.7.1", optional = true, features = [
   "macros",
   "chrono",
 ] }
-serde = { version = "1.0.183", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.107"
 cached = { version = "0.46.0", optional = true, features = ["async"] }
 futures = { version = "0.3.28", optional = true }
 dotenvy = "0.15.7"
-leptos-use = { version = "0.7.0", features = ["storage"] }
+leptos-use = { version = "0.8.1", features = ["storage"] }
 actix-web-actors = { version = "4.2.0", optional = true }
 actix = { version = "0.13.1", optional = true }
 actix-broker = { version = "0.4.3", optional = true }

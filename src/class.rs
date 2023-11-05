@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use strum_macros::{Display, EnumIs};
+use strum_macros::{Display, EnumIs, FromRepr, IntoStaticStr};
 
 #[derive(Hash, Copy, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
 #[cfg_attr(
@@ -106,7 +106,9 @@ impl std::fmt::Display for Location {
     }
 }
 
-#[derive(Hash, Clone, PartialEq, Eq, Deserialize, Serialize, Copy, Display)]
+#[derive(
+    Hash, Clone, PartialEq, Eq, Deserialize, Serialize, Copy, Display, FromRepr, IntoStaticStr
+)]
 #[cfg_attr(
     feature = "ssr",
     derive(sqlx::Type),
@@ -120,6 +122,12 @@ pub enum DayOfWeek {
     Wednesday,
     Thursday,
     Friday,
+}
+
+impl DayOfWeek {
+    pub fn short_name(&self) -> &'static str {
+        &Into::<&'static str>::into(self)[..3]
+    }
 }
 
 #[derive(Hash, Clone, PartialEq, Eq, Deserialize, Serialize, Copy, Default)]
@@ -145,9 +153,15 @@ pub struct Class {
     /// The class name
     pub name: String,
     pub location: Location,
-    pub day_of_week: DayOfWeek,
+    pub day: DayOfWeek,
     /// inclusive range, 0-indexed
     pub period: (usize, usize),
+}
+
+impl std::fmt::Debug for Class {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "class_id: {}", self.id.0)
+    }
 }
 
 #[cfg(feature = "ssr")]
@@ -196,7 +210,7 @@ pub mod db {
                     floor: self.floor as u8,
                     room: self.room,
                 },
-                day_of_week: self.day_of_week,
+                day: self.day_of_week,
                 period: (self.period_start as usize, self.period_end as usize),
             }
         }

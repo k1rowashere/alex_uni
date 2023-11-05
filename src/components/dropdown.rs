@@ -66,9 +66,9 @@ where
     F: Fn(MouseEvent) + 'static,
     S: Fn() -> bool + 'static,
 {
-    const ITEM: &str = "w-full flex px-4 py-2 hover:bg-gray-200 focus:bg-gray-200 \
+    const ITEM: &str = "w-full flex items-center px-4 py-2 hover:bg-gray-200 focus:bg-gray-200 \
                         dark:hover:bg-gray-600 dark:focus:bg-gray-600 focus:outline-none \
-                        aria-selected:text-blue-500";
+                        aria-selected:text-indigo-500";
     const TOP_SEPARATOR: &str = "top-separator";
 
     let class = format!(
@@ -80,10 +80,8 @@ where
     let selected = move || selected().to_string();
 
     view! {
-        <li class="m-0">
-            <button class=class aria-selected=selected tabindex=0 on:click=on_click>
-                {children()}
-            </button>
+        <li role="button" class=class aria-selected=selected tabindex=0 on:click=on_click>
+            {children()}
         </li>
     }
 }
@@ -97,7 +95,7 @@ pub(crate) fn DropdownLinkItem(
 ) -> impl IntoView {
     const ITEM: &str = "w-full flex text-left px-4 py-2 hover:bg-gray-200 focus:bg-gray-200 \
                         dark:hover:bg-gray-600 dark:focus:bg-gray-600 focus:outline-none \
-                        aria-selected:text-blue-500 dark:aria-selected:text-blue-500";
+                        aria-selected:text-indigo-500 dark:aria-selected:text-indigo-500";
     const TOP_SEPARATOR: &str = "top-separator";
 
     let class = format!(

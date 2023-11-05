@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            SELECT tsub.term_subject_id AS \"id: SubjectId\"\n            FROM term_subscribers as tsub\n            WHERE tsub.student_id = ?\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id: SubjectId",
+        "ordinal": 0,
+        "type_info": "Int64"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "be4c24d6746242d8131d2653d89d91685e8361690b2f65703ddc6cddb0f5dd82"
+}

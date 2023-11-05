@@ -18,7 +18,7 @@ async fn get_std_grades() -> Result<Grades, ServerFnError> {
 }
 
 #[component]
-pub fn grades_page() -> impl IntoView {
+pub fn GradesPage() -> impl IntoView {
     view! {
         <div>
             "Grades"

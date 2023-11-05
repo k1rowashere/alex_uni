@@ -2,7 +2,7 @@
 use leptos::*;
 use serde::{Deserialize, Serialize};
 
-use crate::and_then;
+use crate::components::suserr::SusErr;
 
 const LABEL_CLASS: &str = "dot_grid font-bold";
 const GRID_CLASS: &str =
@@ -53,7 +53,7 @@ struct ContactInfo {
     address: Option<String>,
 }
 
-#[server(,,"GetJson")]
+#[server(encoding = "GetJson")]
 async fn get_std_perosonal_info() -> Result<ProfileInfo, ServerFnError> {
     let req = expect_context::<actix_web::HttpRequest>();
     let pool = req
@@ -127,28 +127,22 @@ async fn get_std_perosonal_info() -> Result<ProfileInfo, ServerFnError> {
 }
 
 #[component]
-pub fn profile_page() -> impl IntoView {
+pub fn ProfilePage() -> impl IntoView {
     let profile = create_resource(|| (), |_| get_std_perosonal_info());
     view! {
         <h1 class="text-4xl mb-7">"Student Profile"</h1>
         <div class="flex flex-col gap-4">
-            <Suspense fallback=|| ()>
-                <ErrorBoundary fallback=|_| ()>
-                    {and_then!(|profile| {
-                        view! {
-                            <Personal info=&profile.student_info/>
-                            <section>
-                                <h2 class="text-2xl">"Contact Info"</h2>
-                                <div class=GRID_CLASS>
-                                    <Contact info=&profile.student_info.contact_info/>
-                                </div>
-                            </section>
-                            <Parent info=&profile.guardian_info/>
-                            <Education info=&profile.qualification/>
-                        }
-                    })}
-                </ErrorBoundary>
-            </Suspense>
+            <SusErr resource=profile let:profile>
+                <Personal info=&profile.student_info/>
+                <section>
+                    <h2 class="text-2xl">"Contact Info"</h2>
+                    <div class=GRID_CLASS>
+                        <Contact info=&profile.student_info.contact_info/>
+                    </div>
+                </section>
+                <Parent info=&profile.guardian_info/>
+                <Education info=&profile.qualification/>
+            </SusErr>
         </div>
     }
 }

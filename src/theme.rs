@@ -48,15 +48,15 @@ pub fn theme_listener() -> ThemeSignal {
 }
 
 #[component]
-pub fn theme_dropdown() -> impl IntoView {
+pub fn ThemeDropdown() -> impl IntoView {
     let (get_theme, set_theme) = expect_context::<ThemeSignal>();
     let button = move || {
         view! {
             {icon!("mdi/weather-sunny", "text-2xl dark:hidden")
-                .class("text-blue-600", move || get_theme() != Theme::System)
+                .class("text-indigo-600", move || get_theme() != Theme::System)
             }
             {icon!("mdi/weather-night", "text-2xl hidden dark:block")
-                .class("text-blue-500", move || get_theme() != Theme::System)
+                .class("text-indigo-500", move || get_theme() != Theme::System)
             }
         }
     };
@@ -90,7 +90,7 @@ pub fn theme_dropdown() -> impl IntoView {
 /// Script to set the theme based on local storage and system theme
 /// This is blocking by design: to avoid a flash of light theme
 #[component]
-pub fn theme_script() -> impl IntoView {
+pub fn ThemeScript() -> impl IntoView {
     use leptos_meta::Script;
     const JS: &str = r#"
         const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches;

@@ -5,7 +5,7 @@ use leptos_router::*;
 use crate::components::navbar::{Navbar, SideNavbar};
 
 use crate::grades::GradesPage;
-use crate::login::{get_user_info, Login, LoginPage, Logout, User};
+use crate::login::*;
 use crate::profile::ProfilePage;
 use crate::registration::RegistrationPage;
 use crate::timetable::TimetablePage;
@@ -15,7 +15,7 @@ pub type UserResource =
 pub type LogoutAction = Action<Logout, Result<(), ServerFnError>>;
 
 #[component]
-pub fn app() -> impl IntoView {
+pub fn App() -> impl IntoView {
     let login = create_server_action::<Login>();
     let logout = create_server_action::<Logout>();
     let user: UserResource = create_blocking_resource(
@@ -40,7 +40,7 @@ pub fn app() -> impl IntoView {
                     path="login"
                     view=move || view! { <LoginPage action=login user/> }
                 />
-                <Route path="/" view=MainWrapper>
+                <Route path="/" view=move || view!(<MainWrapper user/>)>
                     <Route path="" view=ProfilePage/>
                     <Route path="email" view=move || view! { "email" }/>
                     <Route path="registration" view=RegistrationPage/>
@@ -57,14 +57,13 @@ pub fn app() -> impl IntoView {
 }
 
 #[component]
-fn main_wrapper() -> impl IntoView {
-    let user = expect_context::<UserResource>();
+fn MainWrapper(user: UserResource) -> impl IntoView {
     // TODO: add bottom margin to main if sidebar is fixed to bottom
     //       add serverside login guard
     view! {
         // login guard
-        <Suspense fallback=|| ()>
-            <Show when=move || user.with(|u| matches!(u, Some(Ok(None)))) fallback=||()>
+        <Suspense>
+            <Show when=move || user.with(|u| matches!(u, Some(Ok(None))))>
                  <Redirect path="/login"/>
             </Show>
         </Suspense>
@@ -79,7 +78,7 @@ fn main_wrapper() -> impl IntoView {
 }
 
 #[component]
-fn not_found() -> impl IntoView {
+fn NotFound() -> impl IntoView {
     #[cfg(feature = "ssr")]
     {
         let resp = expect_context::<leptos_actix::ResponseOptions>();

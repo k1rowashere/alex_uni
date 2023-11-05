@@ -4,72 +4,34 @@ use super::grid::TimetableCell;
 use super::Class;
 use super::*;
 
-fn count_days(table_data: &Vec<Class>) -> [u8; 7] {
+fn count_days(table_data: &[Class]) -> [u8; 7] {
     let mut days = [0; 7];
     for class in table_data {
-        days[class.day_of_week as usize] += 1;
+        days[class.day as usize] += 1;
     }
     days
 }
 
-#[component]
-pub fn timetable_list_loading() -> impl IntoView {
-    let row = || {
-        view! {
-            <td class="p-1 center">
-                <div class="mx-auto rounded-xl w-[10ch] h-5"></div>
-            </td>
-            <td class="p-1">
-                <div class="rounded-xl w-[6ch] h-4 inline-block mb-0.5"></div>
-                <div class="rounded-xl w-[20ch] h-5 inline-block"></div>
-                <div class="rounded-xl w-[10ch] h-4 block"></div>
-            </td>
-        }
-    };
-
-    view! {
-        <table class="timetable_list skeleton w-full">
-            <thead>
-                <tr>
-                    <th class="w-1/6 p-1">
-                        <div class="mx-auto rounded-xl w-[3ch] h-5"></div>
-                    </th>
-                    <th class="w-1/6 p-1">
-                        <div class="mx-auto rounded-xl w-[4ch] h-5"></div>
-                    </th>
-                    <th class="w-2/3 p-1">
-                        <div class="mx-auto rounded-xl w-[5ch] h-5"></div>
-                    </th>
-                </tr>
-            </thead>
-            <tbody>
-                {[move || {
-                    view! {
-                        <tr>
-                            <th rowspan="2">
-                                <div class="mx-auto rounded-xl w-[6ch] h-5"></div>
-                            </th>
-                            {row}
-                        </tr>
-                        <tr>{row}</tr>
-                    }
-                }; 5].collect_view()}
-            </tbody>
-        </table>
-    }
+fn create_read_slice<T, O>(
+    signal: impl SignalWith<Value = T> + 'static,
+    getter: impl Fn(&T) -> O + Copy + 'static,
+) -> Memo<O>
+where
+    O: Clone + Copy + PartialEq,
+{
+    Memo::new(move |_| signal.with(getter))
 }
 
+/// Assumes list is sorted by day of week and period
 #[component]
-pub fn timetable_list(
+pub fn TimetableList(
     data: Vec<Class>,
     #[prop(optional, into)] flags: MaybeSignal<TimetableFlags>,
 ) -> impl IntoView {
-    // assumes the list is sorted by day_of_week, and then period
-    let flags = store_value(flags);
-    let time_style = create_memo(move |_| flags.get_value().get().time_style);
-    let show_loc = create_memo(move |_| flags.get_value().get().show_loc);
-    let show_prof = create_memo(move |_| flags.get_value().get().show_prof);
-    let show_code = create_memo(move |_| flags.get_value().get().show_code);
+    let time_style = create_read_slice(flags, |f| f.time_style);
+    let show_loc = create_read_slice(flags, |f| f.show_loc);
+    let show_prof = create_read_slice(flags, |f| f.show_prof);
+    let show_code = create_read_slice(flags, |f| f.show_code);
 
     let rowspans = count_days(&data);
     let mut prev_day = DayOfWeek::Friday;
@@ -77,11 +39,11 @@ pub fn timetable_list(
         view! {
             <tr>
                 {
-                    let curr_day = class.day_of_week;
+                    let curr_day = class.day;
                     if curr_day != prev_day {
                         prev_day = curr_day;
                         view! {
-                            <th rowspan=rowspans[class.day_of_week as usize]>
+                            <th rowspan=rowspans[class.day as usize]>
                                 {curr_day.to_string()}
                             </th>
                         }.into_view()
@@ -114,7 +76,7 @@ pub fn timetable_list(
                     </td>
                 </Show>
                 <TimetableCell
-                    class=class
+                    class=&class
                     show_location=show_loc
                     show_prof=show_prof
                     show_code=show_code

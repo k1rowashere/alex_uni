@@ -12,7 +12,7 @@
   }
 
   .bg-tertiary {
-    @apply bg-gray-100 dark:bg-gray-800;
+    @apply bg-gray-100 dark:bg-slate-800;
   }
 
   .top-separator {
@@ -31,7 +31,7 @@
   }
 
   .btn-primary {
-    @apply btn bg-blue-500 text-white hover:bg-blue-700 focus:ring-blue-400;
+    @apply btn bg-indigo-500 text-white hover:bg-indigo-700 focus:ring-indigo-400;
   }
 
   .btn-secondary {
@@ -44,14 +44,14 @@
 
   .link {
     @apply hover:bg-selections focus:bg-selections 
-      aria-[current=page]:text-blue-500 transition-colors;
+      aria-[current=page]:text-indigo-500 transition-colors;
   }
 
   .peer:not(:placeholder-shown) ~ .input_label {
     @apply scale-75 -translate-y-6 px-1;
   }
   .peer:focus ~ .input_label {
-    @apply scale-75 -translate-y-6 px-1 !text-blue-500;
+    @apply scale-75 -translate-y-6 px-1 !text-indigo-500;
   }
 
   .submit-attempt input:invalid {

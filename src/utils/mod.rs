@@ -1,4 +1,3 @@
-pub mod and_then_macro;
 use std::str::FromStr;
 
 use leptos::*;
@@ -42,7 +41,7 @@ where
     let navigate = use_navigate();
     let location = use_location();
 
-    let get = create_memo({
+    let get = Memo::new({
         let key = key.clone();
         move |_| {
             query_map
@@ -65,10 +64,7 @@ where
         let new_url = format!("{path}{qs}");
         navigate(
             &new_url,
-            NavigateOptions {
-                replace: true,
-                ..Default::default()
-            },
+            NavigateOptions { replace: true, ..Default::default() },
         );
     });
 
@@ -97,8 +93,6 @@ pub fn get_radio_value(name: &str) -> Option<String> {
         .map(|el| el.unchecked_into::<web_sys::HtmlInputElement>().value())
 }
 
-/// This is a macro that will inline the contents of an svg file.
-/// Adds useful attributes to svg container
 /// # Usage:
 /// `icon!("path/to/icon", "classes")`
 /// ps. path is relative to assets/icons/, `.svg` must be omitted
@@ -109,20 +103,24 @@ macro_rules! icon {
         icon!($icon_name).classes($class)
     };
     ($icon_name:literal) => {{
-        let icon_svg = include_str!(concat!(
+        const SVG_REPLACE: &str = r#"svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            focusable="false"
+            aria-hidden="true"
+            role="graphics-symbol"
+            style="width: 1em; height: 1em;"
+        "#;
+
+        let svg = include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/assets/icons/",
             $icon_name,
             ".svg"
-        ));
-        let inner_html = icon_svg
-            .replace("path", "path fill=\"currentColor\"")
-            .replace(
-                "svg",
-                "svg aria-hidden=\"true\" focusable=\"false\" role=\"img\" style=\"width:1em\"",
-            );
-        leptos::leptos_dom::html::span()
-            .attr("class", ("flex"))
-            .attr("inner_html", (inner_html))
+        ))
+        .replace("svg", SVG_REPLACE);
+
+        leptos::leptos_dom::html::span().inner_html(svg)
     }};
 }

@@ -163,18 +163,18 @@ pub async fn get_user_info() -> Result<Option<User>, ServerFnError> {
 }
 
 #[component]
-pub fn login_page(
+pub fn LoginPage(
     action: Action<Login, Result<bool, ServerFnError>>,
     user: crate::app::UserResource,
 ) -> impl IntoView {
     let form_ref = create_node_ref::<html::Form>();
     let add_submit_class = move |_| {
-        form_ref().unwrap().class("submit-attempt", true);
+        let _ = form_ref().unwrap().classes("submit-attempt");
     };
 
     view! {
-        <Suspense fallback=|| ()>
-            <Show when=move || user.with(|u| matches!(u, Some(Ok(Some(_))))) fallback=||()>
+        <Suspense>
+            <Show when=move || user.with(|u| matches!(u, Some(Ok(Some(_)))))>
                  <Redirect path="/"/>
             </Show>
         </Suspense>

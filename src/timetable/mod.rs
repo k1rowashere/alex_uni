@@ -6,9 +6,10 @@ use strum_macros::{Display, EnumString};
 
 pub use crate::class::{Class, *};
 use crate::components::checkbox::Checkbox;
+use crate::components::suserr::TransErr;
 use crate::icon;
-pub use crate::timetable::grid::{TimetableGrid, TimetableGridLoading};
-pub use crate::timetable::list::{TimetableList, TimetableListLoading};
+pub use crate::timetable::grid::TimetableGrid;
+pub use crate::timetable::list::TimetableList;
 use crate::utils::get_radio_value;
 
 pub const PERIOD_START_TIME: [&str; 12] = [
@@ -47,7 +48,7 @@ pub struct TimetableFlags {
     pub show_code: bool,
 }
 
-#[server(, , "GetJson")]
+#[server(encoding = "GetJson")]
 pub async fn get_std_classes() -> Result<Vec<Class>, ServerFnError> {
     use crate::class::db::ClassRow;
     use crate::login::user_id_from_jwt;
@@ -87,8 +88,8 @@ pub async fn get_std_classes() -> Result<Vec<Class>, ServerFnError> {
     // TODO: check for conflicts (handle biweekly courses)
 
     classes.sort_by(|a, b| {
-        let a = (a.day_of_week as usize, a.period.0);
-        let b = (b.day_of_week as usize, b.period.0);
+        let a = (a.day as usize, a.period.0);
+        let b = (b.day as usize, b.period.0);
         a.cmp(&b)
     });
 
@@ -97,11 +98,11 @@ pub async fn get_std_classes() -> Result<Vec<Class>, ServerFnError> {
 
 // TODO: handle bi-weekly classes
 #[component]
-pub fn timetable_page() -> impl IntoView {
+pub fn TimetablePage() -> impl IntoView {
     let table_data =
         create_resource(|| (), |_| async move { get_std_classes().await });
     let (timetable_settings, flags) = timetable_settings_inner();
-    let view = create_memo(move |_| flags().view);
+    let view = Memo::new(move |_| flags().view);
 
     // PERF: Investigate `template!{}`
     // FIXME: fix tailwind not grabbing dynamic styles
@@ -110,32 +111,21 @@ pub fn timetable_page() -> impl IntoView {
     view! {
         <div class="relative flex justify-between">
             <h1 class="text-4xl">"Timetable"</h1>
-            <TimetableSettings>
-                {timetable_settings}
-            </TimetableSettings>
+            <TimetableSettings>{timetable_settings}</TimetableSettings>
         </div>
         <div class="w-auto overflow-x-auto pt-7">
-            <Suspense fallback=move || match view() {
-                View::List => TimetableListLoading().into_view(),
-                View::Grid => TimetableGridLoading().into_view(),
-            }>
-            <ErrorBoundary fallback=|_| "Server Error">
-                {move || {
-                    table_data.and_then(|classes| {
-                        match view() {
-                            View::List => view! { <TimetableList data=classes.to_owned() flags=flags/> },
-                            View::Grid => view! { <TimetableGrid data=classes.to_owned() flags=flags/> },
-                        }
-                    })
+            <TransErr resource=table_data let:classes>
+                {match view() {
+                    View::List => view! { <TimetableList data=classes.to_owned() flags=flags/> },
+                    View::Grid => view! { <TimetableGrid data=classes.to_owned() flags=flags/> },
                 }}
-            </ErrorBoundary>
-            </Suspense>
+            </TransErr>
         </div>
     }
 }
 
 #[component]
-fn timetable_settings(children: Children) -> impl IntoView {
+fn TimetableSettings(children: Children) -> impl IntoView {
     let (settings_closed, set_settings_closed) = create_signal(true);
     let settings_menu = create_node_ref::<html::Div>();
     let settings_wrapper = create_node_ref::<html::Div>();
@@ -192,7 +182,7 @@ fn timetable_settings_inner() -> (impl IntoView, Signal<TimetableFlags>) {
     let (show_code, set_show_code) = query::<bool>("show_code");
 
     // TODO: save params
-    let flags = create_memo(move |_| TimetableFlags {
+    let flags = Memo::new(move |_| TimetableFlags {
         view: view().unwrap_or_default(),
         time_style: time_style().unwrap_or_default(),
         show_loc: show_loc().unwrap_or(true),
@@ -200,11 +190,11 @@ fn timetable_settings_inner() -> (impl IntoView, Signal<TimetableFlags>) {
         show_code: show_code().unwrap_or(true),
     });
 
-    let view = create_memo(move |_| flags().view);
-    let time_style = create_memo(move |_| flags().time_style);
-    let show_loc = create_memo(move |_| flags().show_loc);
-    let show_prof = create_memo(move |_| flags().show_prof);
-    let show_code = create_memo(move |_| flags().show_code);
+    let view = Memo::new(move |_| flags().view);
+    let time_style = Memo::new(move |_| flags().time_style);
+    let show_loc = Memo::new(move |_| flags().show_loc);
+    let show_prof = Memo::new(move |_| flags().show_prof);
+    let show_code = Memo::new(move |_| flags().show_code);
 
     let on_view_change = move |_| {
         set_view(
