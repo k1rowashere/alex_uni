@@ -8,13 +8,14 @@ use crate::login::Logout;
 use crate::theme::*;
 use crate::utils::unfocus_on_select;
 
+// TODO: save url state when using the sidenav (when going to /timtable, the previous timetable state should be saved)
+
 #[component]
-pub fn navbar() -> impl IntoView {
-    const ICON: &str = "mr-2 flex content-center";
+pub fn Navbar() -> impl IntoView {
     let logout = expect_context::<LogoutAction>();
 
     view! {
-        <nav class="sticky top-0 z-50 bg-inherit px-5 py-1 rounded-b flex font-semibold gap-2">
+        <nav class="sticky top-0 z-50 h-[var(--nav-offset)] bg-inherit px-5 py-2 rounded-b flex font-semibold gap-2">
             <A class="font-extrabold text-2xl flex gap-2 flex-grow my-auto" href="/" exact=true>
                 <img
                     alt="Alexandria University logo"
@@ -23,18 +24,18 @@ pub fn navbar() -> impl IntoView {
                 />
                 <span>"Alexandria University"</span>
             </A>
-            <ThemeDropdown/>
-            <Dropdown button=move || icon!("mdi/web", "text-2xl") label="Language Select Dropdown">
-                <DropdownLinkItem href="#">
-                    <span class=ICON>"🇺🇸"</span>
-                    <span>"English"</span>
-                </DropdownLinkItem>
-                <DropdownLinkItem href="#">
-                    <span class=ICON>"🇪🇬"</span>
-                    <span>"العربية"</span>
-                </DropdownLinkItem>
-            </Dropdown>
-            <Dropdown button=move || icon!("mdi/account", "text-4xl") label="Profile Menu Dropdown">
+            <ThemeSwitch/>
+            // <Dropdown button=move || icon!("mdi/web", "text-2xl") label="Language Select Dropdown">
+            //     <DropdownLinkItem href="#">
+            //         <span class=ICON>"🇺🇸"</span>
+            //         <span>"English"</span>
+            //     </DropdownLinkItem>
+            //     <DropdownLinkItem href="#">
+            //         <span class=ICON>"🇪🇬"</span>
+            //         <span>"العربية"</span>
+            //     </DropdownLinkItem>
+            // </Dropdown>
+            <Dropdown button=move || icon!("mdi/menu", "text-4xl") label="Profile Menu Dropdown">
                 <li class="grid py-2">
                     <span class="px-2 block text-xs text-gray-500 dark:text-gray-400 t-gray-400">
                         "Signed in as"
@@ -60,7 +61,7 @@ pub fn navbar() -> impl IntoView {
 }
 
 #[component]
-pub fn side_navbar() -> impl IntoView {
+pub fn SideNavbar() -> impl IntoView {
     const NAV_CLASS: &str = "side_nav";
     const LINK_CLASS: &str = "side_nav__link";
     const LABEL_CLASS: &str = "side_nav__label";

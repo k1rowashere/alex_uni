@@ -1,4 +1,3 @@
-use crate::components::dropdown::*;
 use crate::icon;
 use leptos::*;
 use leptos_use::*;
@@ -47,43 +46,39 @@ pub fn theme_listener() -> ThemeSignal {
     (theme, set_theme)
 }
 
+/// A 3-way theme switcher (pill button)
 #[component]
-pub fn ThemeDropdown() -> impl IntoView {
-    let (get_theme, set_theme) = expect_context::<ThemeSignal>();
-    let button = move || {
-        view! {
-            {icon!("mdi/weather-sunny", "text-2xl dark:hidden")
-                .class("text-indigo-600", move || get_theme() != Theme::System)
-            }
-            {icon!("mdi/weather-night", "text-2xl hidden dark:block")
-                .class("text-indigo-500", move || get_theme() != Theme::System)
-            }
-        }
-    };
+pub fn ThemeSwitch() -> impl IntoView {
+    let (theme, set_theme) = crate::theme::theme_listener();
+    const BUTTON: &str = "switch_button";
+    const SEPERATOR: &str = "h-4 w-px bg-gray-500 dark:bg-gray-300";
+
     view! {
-        <Dropdown button=button label="Theme Select Dropdown">
-            <DropdownButtonItem
-                selected=move || get_theme() == Theme::Light
-                on_click=move |_| set_theme(Theme::Light)
+        <div class="text-2xl flex w-min items-center rounded-xl bg-secondary shadow">
+            <button
+                class="rounded-l-xl ".to_owned() + BUTTON
+                data-selected=move || theme() == Theme::Light
+                on:click=move |_| set_theme(Theme::Light)
             >
-                {icon!("mdi/weather-sunny", "mr-2")}
-                Light
-            </DropdownButtonItem>
-            <DropdownButtonItem
-                selected=move || get_theme() == Theme::Dark
-                on_click=move |_| set_theme(Theme::Dark)
+                {icon!("mdi/weather-sunny", "inline-block")}
+            </button>
+            <div class=SEPERATOR/>
+            <button
+                class="rounded-none ".to_owned() + BUTTON
+                data-selected=move || theme() == Theme::System
+                on:click=move |_| set_theme(Theme::System)
             >
-                {icon!("mdi/weather-night", "mr-2")}
-                Dark
-            </DropdownButtonItem>
-            <DropdownButtonItem
-                selected=move || get_theme() == Theme::System
-                on_click=move |_| set_theme(Theme::System)
+                {icon!("mdi/monitor", "inline-block")}
+            </button>
+            <div class=SEPERATOR/>
+            <button
+                class="rounded-r-xl ".to_owned() + BUTTON
+                data-selected=move || theme() == Theme::Dark
+                on:click=move |_| set_theme(Theme::Dark)
             >
-                {icon!("mdi/monitor", "mr-2")}
-                System
-            </DropdownButtonItem>
-        </Dropdown>
+                {icon!("mdi/weather-night", "inline-block")}
+            </button>
+        </div>
     }
 }
 

@@ -26,9 +26,6 @@ pub fn App() -> impl IntoView {
     provide_context(logout);
     provide_meta_context();
 
-    let themes = crate::theme::theme_listener();
-    provide_context(themes);
-
     view! {
         <Stylesheet id="leptos" href="/pkg/uni_web.css"/>
         <Title text="Alexandria University"/>
@@ -59,7 +56,6 @@ pub fn App() -> impl IntoView {
 #[component]
 fn MainWrapper(user: UserResource) -> impl IntoView {
     // TODO: add bottom margin to main if sidebar is fixed to bottom
-    //       add serverside login guard
     view! {
         // login guard
         <Suspense>
@@ -70,7 +66,7 @@ fn MainWrapper(user: UserResource) -> impl IntoView {
         <Navbar/>
         <main class="bg-inherit min-h-[calc(100vh-var(--nav-offset))] flex-grow grid md:grid-cols-[minmax(min-content,_max-content)_auto]">
             <SideNavbar/>
-            <div class="py-5 px-7 mx-auto w-full max-w-[90rem] overflow-x-auto">
+            <div class="py-5 px-7 mx-auto w-full max-w-[100rem] overflow-x-auto">
                 <Outlet/>
             </div>
         </main>

@@ -23,6 +23,7 @@ pub fn AccordionItem<F, IV>(
     #[prop(optional)] start_open: bool,
     children: Children,
     #[prop(optional, into)] class: String,
+    #[prop(optional, into)] inner_class: String,
 ) -> impl IntoView
 where
     F: FnOnce() -> IV + 'static,
@@ -80,7 +81,7 @@ where
             <div
                 ref=list
                 id=&id_str
-                class="transition-[opacity,_max-height] overflow-hidden w-full"
+                class=inner_class + " transition-[opacity,_max-height] overflow-hidden w-full"
                 class:opacity-0=move || !open()
                 class:invisible=move || !open()
                 style:max-height=get_max_height

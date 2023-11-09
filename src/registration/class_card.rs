@@ -40,34 +40,42 @@ pub fn ClassCard(subject: Subject) -> impl IntoView {
         }
     };
 
-    // "outline-red-500 outline-green-500"
     view! {
-        <div class="p-2 m-2 rounded-xl dark:shadow-gray-600 shadow-md \
-                    w-1/3 bg-indigo-50 dark:bg-indigo-950 bg-opacity-50 outline"
-            class:outline-red-500=has_collisions
-            class:outline-green-500=is_selected
-            class:outline=move || has_collisions() || is_selected()
+        <div class="p-2 my-2 rounded-xl dark:shadow-gray-700 shadow-md \
+                    bg-indigo-50 dark:bg-indigo-950 dark:bg-opacity-20 \
+                    w-full sm:w-1/2 md:w-1/3 xl:w-1/5 2xl:w-1/6 h-min \
+                    border-2 border-transparent hover:!border-indigo-300 \
+                    flex flex-col gap-1 \
+                    data-[selected]:border-indigo-300 data-[invalid]:!border-red-300 \
+                    "
+            data-selected=is_selected
+            data-invalid=has_collisions
         >
-            <div class="flex flex-col gap-1">
-                <p class="uppercase text-indigo-500 dark:text-indigo-300">
-                    {"Group "} {group}
-                    {sec_no.map(|&sn| format!(" - Section {}", sn as u8))}
-                </p>
-                <p class="italic">{prof}</p>
-                {format_class_time(lec)}
-                {tut.map(format_class_time)}
-                {lab.map(format_class_time)}
-                <button
-                    type="button"
-                    class=move || if is_selected() { "btn-danger" } else { "btn-primary" }
-                    on:click=on_click
-                >
-                    {move || if is_selected() { "Remove" } else { "Add" }}
-                    <span class="text-xs font-thin">
-                        {move || format!(" ({} / {})", rem_seats(), max_seats)}
-                    </span>
-                </button>
-            </div>
+            <p class="uppercase text-indigo-500 dark:text-indigo-300">
+                {"Group "} {group}
+                {sec_no.map(|&sn| format!(" - Section {}", sn as u8))}
+            </p>
+            <p class="italic">{prof}</p>
+            {format_class_time(lec)}
+            {tut.map(format_class_time)}
+            {lab.map(format_class_time)}
+            <button
+                type="button"
+                class=move || if is_selected() { "btn-primary-outline" } else { "btn-primary" }
+                on:click=on_click
+            >
+                {move ||
+                    if is_selected() {
+                        icon!("mdi/minus-box")
+                    } else {
+                        icon!("mdi/plus-box")
+                    }.classes("inline-block align-middle")
+                }
+                {move || if is_selected() { "Added" } else { "Add" }}
+                <span class="text-xs font-thin">
+                    {move || format!(" ({} / {})", rem_seats(), max_seats)}
+                </span>
+            </button>
         </div>
     }
 }
@@ -103,7 +111,7 @@ fn sec_no<'a>(
 
 fn rem_seats(
     id: super::SubjectId,
-    is_selected: Memo<bool>,
+    _is_selected: Memo<bool>,
 ) -> impl Fn(Option<&u32>) -> u32 {
     let seats_ctx = expect_context::<Seats>();
     move |prev| {
@@ -112,6 +120,8 @@ fn rem_seats(
                 .find_map(|&(sid, seats)| (sid == id).then_some(seats))
                 .or(prev.cloned())
                 .unwrap_or_default()
-        }) - if is_selected() { 1 } else { 0 }
+        })
+        // TODO: subtract one if selected and not saved
+        // - if is_selected() { 1 } else { 0 }
     }
 }

@@ -20,10 +20,7 @@ struct RemSeatsWs {
 
 impl RemSeatsWs {
     pub fn new(db_pool: sqlx::SqlitePool) -> Self {
-        Self {
-            hb: Instant::now(),
-            db_pool,
-        }
+        Self { hb: Instant::now(), db_pool }
     }
 }
 

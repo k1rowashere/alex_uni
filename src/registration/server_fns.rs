@@ -81,14 +81,7 @@ pub(super) async fn subject_by_id(
     assert!(tut.is_none() || tut.as_ref().unwrap().ctype.is_tutorial());
     assert!(lab.is_none() || lab.as_ref().unwrap().ctype.is_lab());
 
-    Ok(Some(Subject {
-        id: s,
-        max_seats,
-        group,
-        lec,
-        tut,
-        lab,
-    }))
+    Ok(Some(Subject { id: s, max_seats, group, lec, tut, lab }))
 }
 
 /// Returns the remaining seats for the given subjects

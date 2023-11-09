@@ -83,7 +83,6 @@ pub fn RegistrationPage() -> impl IntoView {
     //       Add a filter bar (by group, section, ...)
     //       Add and/or subtract from the rem_seats when selected
     view! {
-        <h1 class="text-4xl mb-1">"Class Registration"</h1>
         <subjects_signal::CxtProvider let:subjects>
             {move ||
                 subjects
@@ -97,22 +96,25 @@ pub fn RegistrationPage() -> impl IntoView {
                     view! { <TabSelector tabs start_tab selector=tab_idx/> }
             })}
             <div class="rounded-b-lg p-4 bg-secondary shadow-lg">
-                <div class="pb-4 flex flex-row items-stretch gap-2">
+                <div class="flex flex-row items-stretch gap-2">
                     <ClassAccordion curr_level=tab_idx.0/>
                     <SideMenu/>
                 </div>
-                <div>
+                // status + action bar
+                <div class="w-full py-2 flex gap-2 justify-end">
+                    // TODO: add status bar (collisions, selected credit hours...)
                     <button
                         type="button"
-                        class="btn-secondary"
+                        class="btn-primary-outline max-w-[1/6]"
+                        disabled=subjects.saved()
                         on:click=move |_| subjects.discard()
                     >
                         "Discard"
                     </button>
                     <button
                         type="submit"
-                        class="btn-primary"
-                        disabled=subjects.loading()
+                        class="btn-primary max-w-[1/6]"
+                        disabled=subjects.saved()
                         on:click=move |_| subjects.save()
                     >
                         "Save"
@@ -140,7 +142,11 @@ fn ClassAccordion(#[prop(into)] curr_level: Signal<usize>) -> impl IntoView {
         let _start_open = i == 0;
         // TODO: fix start_open
         view! {
-            <AccordionItem class="accordion-collision-border bg-gray-50 dark:bg-slate-900"
+            <AccordionItem
+                class="[&:has([data-selected])]:border-indigo-300 \
+                    [&:has([data-invalid])]:!border-red-300 \
+                    bg-gray-50 dark:bg-slate-900"
+                inner_class="flex flex-wrap gap-2"
                 head=move || head(s.name, s.code)
             >
                 {s.choices
@@ -176,12 +182,9 @@ fn TabSelector(
     let (get, set) = selector;
     create_render_effect(move |_| set(start_tab));
     view! {
-        <div class="flex flex-row gap-1 rounded-t-lg bg-tertiary h-[calc(1em_+_1rem)]">
-            <For
-                each=tabs
-                key=|i| *i
-                let:item
-            >
+        <div class="flex flex-row gap-1 rounded-t-lg bg-tertiary">
+            <h1 class="m-2 font-bold text-xl opacity-50">"Registration"</h1>
+            <For each=tabs key=|i| *i let:item>
                 <button
                     type="button"
                     role="tab"

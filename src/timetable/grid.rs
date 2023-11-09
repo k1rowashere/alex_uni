@@ -150,7 +150,9 @@ fn TimetableGridRow(
 
     view! {
         <tr>
-            <th class="text-left px-2">{DayOfWeek::from_repr(i).map(|d| d.short_name())}</th>
+            <th class="text-left px-2 h-[calc(3rem+10px)]">
+                {DayOfWeek::from_repr(i).map(|d| d.short_name())}
+            </th>
             {row.map(map_cell).collect_view()}
         </tr>
     }

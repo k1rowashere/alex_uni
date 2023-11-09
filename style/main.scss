@@ -1,7 +1,7 @@
 @import "timetable";
 
 * {
-  --nav-offset: 44.4px;
+  --nav-offset: 50px;
   --vert-nav-offset: 74px;
 }
 
@@ -13,10 +13,6 @@ body {
 input,
 select {
   background: none;
-}
-
-.accordion-collision-border:has(.outline) {
-  border-color: red;
 }
 
 .box {
