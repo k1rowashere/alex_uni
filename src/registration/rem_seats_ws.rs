@@ -4,23 +4,18 @@ use actix_broker::BrokerSubscribe;
 use actix_web::{web, Error, HttpRequest, HttpResponse};
 use actix_web_actors::ws;
 use serde::{Deserialize, Serialize};
-use std::time::{Duration, Instant};
-
-const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
-const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
 
 #[derive(Message, Clone, Serialize, Deserialize)]
 #[rtype(result = "()")]
 pub struct RemSeatsMsg(pub Vec<(super::SubjectId, u32)>);
 
 struct RemSeatsWs {
-    hb: Instant,
     db_pool: sqlx::SqlitePool,
 }
 
 impl RemSeatsWs {
     pub fn new(db_pool: sqlx::SqlitePool) -> Self {
-        Self { hb: Instant::now(), db_pool }
+        Self { db_pool }
     }
 }
 
@@ -37,16 +32,6 @@ impl Actor for RemSeatsWs {
                 .await
                 .unwrap_or(RemSeatsMsg(Vec::new()))
         }));
-
-        // heartbeat: ping the client every 5 secs to check if the conn is alive
-        // TEMP: is this needed?
-        ctx.run_interval(HEARTBEAT_INTERVAL, |act, ctx| {
-            if Instant::now().duration_since(act.hb) > CLIENT_TIMEOUT {
-                ctx.stop();
-            } else {
-                ctx.ping(b"");
-            }
-        });
     }
 }
 
@@ -71,11 +56,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for RemSeatsWs {
         ctx: &mut Self::Context,
     ) {
         match msg {
-            Ok(ws::Message::Ping(msg)) => {
-                self.hb = Instant::now();
-                ctx.pong(&msg);
-            }
-            Ok(ws::Message::Pong(_)) => self.hb = Instant::now(),
+            Ok(ws::Message::Ping(msg)) => ctx.pong(&msg),
             Ok(ws::Message::Close(reason)) => {
                 ctx.close(reason);
                 ctx.stop()
