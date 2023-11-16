@@ -54,7 +54,9 @@ pub fn ThemeSwitch() -> impl IntoView {
     const SEPERATOR: &str = "h-4 w-px bg-gray-500 dark:bg-gray-300";
 
     view! {
-        <div class="text-2xl flex w-min items-center rounded-xl bg-secondary shadow">
+        <div class="text-xl h-min flex w-min items-center rounded-xl \
+                    bg-secondary shadow dark:shadow-gray-600"
+        >
             <button
                 class="rounded-l-xl ".to_owned() + BUTTON
                 data-selected=move || theme() == Theme::Light

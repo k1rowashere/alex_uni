@@ -99,7 +99,7 @@ impl SubjectsSignal {
             // TODO: handle errors (show error msg)
             let _ = register_subjects(selected).await;
             // if success
-            self.subject_map.update_untracked(|hm| {
+            self.subject_map.update(|hm| {
                 hm.values_mut()
                     .for_each(|v| v.initial_selected = v.is_selected);
             });
@@ -123,7 +123,7 @@ impl SubjectsSignal {
     }
 
     /// returns a signal that emits true if the subject is selected
-    pub fn is_selected(self, subject: SubjectId) -> Memo<bool> {
+    pub fn is_selected(self, subject: SubjectId) -> Signal<bool> {
         Memo::new(move |_| {
             self.subject_map.with(move |hm| {
                 matches!(
@@ -132,6 +132,21 @@ impl SubjectsSignal {
                 )
             })
         })
+        .into()
+    }
+
+    /// returns a signal that emits true if the subject has changed from initial state
+    pub fn has_changed(self, subject: SubjectId) -> Signal<bool> {
+        Memo::new(move |_| {
+            self.subject_map.with(move |hm| {
+                matches!(
+                    hm.get(&subject),
+                    Some(MapValue { is_selected, initial_selected, .. })
+                    if *is_selected != *initial_selected
+                )
+            })
+        })
+        .into()
     }
 
     pub fn is_selected_untracked(self, subject: SubjectId) -> bool {

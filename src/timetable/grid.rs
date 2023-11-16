@@ -1,4 +1,3 @@
-use crate::utils::Unzip;
 use leptos::*;
 
 use super::*;
@@ -11,22 +10,14 @@ enum TimetableCell {
     Some(Class),
 }
 
-type GridSignal = (
-    [[Signal<TimetableCell>; 12]; 6],
-    [[WriteSignal<TimetableCell>; 12]; 6],
-);
+// type GridSignal = (
+//     [[ReadSignal<TimetableCell>; 12]; 6],
+//     [[WriteSignal<TimetableCell>; 12]; 6],
+// );
+type GridSignal = [[RwSignal<TimetableCell>; 12]; 6];
 
 fn create_grid_signal(classes: Vec<Class>) -> GridSignal {
-    let timetable = grid_from_classes(classes);
-    timetable
-        .map(|row| {
-            row.map(|cell| {
-                let (r, w) = create_signal(cell);
-                (r.into_signal(), w)
-            })
-            .unzip()
-        })
-        .unzip()
+    grid_from_classes(classes).map(|row| row.map(RwSignal::new))
 }
 
 fn grid_from_classes(classes: Vec<Class>) -> [[TimetableCell; 12]; 6] {
@@ -55,17 +46,17 @@ pub fn TimetableGrid(
     let show_prof = Memo::new(move |_| flags.with(|f| f.show_prof));
     let show_code = Memo::new(move |_| flags.with(|f| f.show_code));
 
-    let (grid, set_grid) = create_grid_signal(data.get_untracked());
+    let grid = create_grid_signal(data.get_untracked());
 
     // this effect is responsible for updating the grid upon change in data
     // PERF: This might not be the most optimal way, (try derived signals?)
     create_effect(move |prev: Option<[[TimetableCell; 12]; 6]>| {
         let curr = grid_from_classes(data());
         if let Some(prev) = prev {
-            for ((prev, curr), set) in prev.iter().zip(&curr).zip(set_grid) {
-                for ((prev, curr), set) in prev.iter().zip(curr).zip(set) {
-                    if prev != curr {
-                        set(curr.clone());
+            for (i, row) in curr.iter().enumerate() {
+                for (j, cell) in row.iter().enumerate() {
+                    if *cell != prev[i][j] {
+                        grid[i][j].set(cell.clone());
                     }
                 }
             }
@@ -124,12 +115,12 @@ pub fn TimetableGrid(
 #[component]
 fn TimetableGridRow(
     i: usize,
-    #[prop(into)] row: [Signal<TimetableCell>; 12],
+    #[prop(into)] row: [RwSignal<TimetableCell>; 12],
     #[prop(default = true.into(), into)] show_prof: MaybeSignal<bool>,
     #[prop(default = true.into(), into)] show_location: MaybeSignal<bool>,
     #[prop(default = true.into(), into)] show_code: MaybeSignal<bool>,
 ) -> impl IntoView {
-    let map_cell = move |cell: Signal<TimetableCell>| {
+    let map_cell = move |cell: RwSignal<TimetableCell>| {
         use TimetableCell as Cell;
         move || match cell() {
             Cell::None => view! { <td class="w-[calc(200%/25)]"/>}.into_view(),

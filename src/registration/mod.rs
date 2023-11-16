@@ -23,7 +23,7 @@ use subjects_signal::SubjectsSignal;
 pub struct SubjectId(i64);
 
 /// A collection of different choices for a specific subject
-#[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, Debug)]
 pub struct SubjectChoices {
     level: u8,
     name: String,
@@ -32,7 +32,7 @@ pub struct SubjectChoices {
 }
 
 /// A container for a class and its associated sections and labs
-#[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, Debug)]
 pub struct Subject {
     id: SubjectId,
     group: u8,
@@ -97,7 +97,7 @@ pub fn RegistrationPage() -> impl IntoView {
             })}
             <div class="rounded-b-lg p-4 bg-secondary shadow-lg">
                 <div class="flex flex-row items-stretch gap-2">
-                    <ClassAccordion curr_level=tab_idx.0/>
+                    <ClassAccordion curr_level=tab_idx.0 subjects/>
                     <SideMenu/>
                 </div>
                 // status + action bar
@@ -136,18 +136,19 @@ pub fn RegistrationPage() -> impl IntoView {
 }
 
 #[component]
-fn ClassAccordion(#[prop(into)] curr_level: Signal<usize>) -> impl IntoView {
-    let element = move |(i, s): (usize, SubjectChoices)| {
-        let head = |name, code| view! { <span class="font-bold">{format!("[{code}] {name}")}</span> };
-        let _start_open = i == 0;
-        // TODO: fix start_open
+fn ClassAccordion(
+    #[prop(into)] curr_level: Signal<usize>,
+    subjects: SubjectsSignal,
+) -> impl IntoView {
+    // TODO: fix start_open
+    fn row((_i, s): (usize, SubjectChoices)) -> leptos::View {
         view! {
             <AccordionItem
                 class="[&:has([data-selected])]:border-indigo-300 \
                     [&:has([data-invalid])]:!border-red-300 \
                     bg-gray-50 dark:bg-slate-900"
-                inner_class="flex flex-wrap gap-2"
-                head=move || head(s.name, s.code)
+                inner_class="grid px-0.5 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2"
+                head=move || view! { <span class="font-bold">{"["}{s.code}{"] "}{s.name}</span> }
             >
                 {s.choices
                     .into_iter()
@@ -156,17 +157,16 @@ fn ClassAccordion(#[prop(into)] curr_level: Signal<usize>) -> impl IntoView {
                 }
             </AccordionItem>
         }
-    };
-    let subjects = expect_context::<SubjectsSignal>().choices();
+    }
 
     view! {
         <Accordion>
-            {move || subjects.with_value(|s| {
+            {move || subjects.choices().with_value(|s| {
                 s.iter()
                     .filter(|c| c.level == curr_level() as u8)
                     .cloned()
                     .enumerate()
-                    .map(element)
+                    .map(row)
                 .collect_view()
             })}
         </Accordion>

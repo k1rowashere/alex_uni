@@ -15,13 +15,14 @@ pub fn Navbar() -> impl IntoView {
     let logout = expect_context::<LogoutAction>();
 
     view! {
-        <nav class="sticky top-0 z-50 h-[var(--nav-offset)] bg-inherit px-5 py-2 rounded-b flex font-semibold gap-2">
+        <nav class="sticky top-0 z-50 h-[var(--nav-offset)] backdrop-blur px-5 py-2 rounded-b flex font-semibold gap-2">
             <A class="font-extrabold text-2xl flex gap-2 flex-grow my-auto" href="/" exact=true>
                 <img
                     alt="Alexandria University logo"
                     class="w-7 aspect-[64/83] my-auto"
                     src="assets/alex_logo_min.webp"
                 />
+                // TODO: Replace with logo (hide on small screens)
                 <span>"Alexandria University"</span>
             </A>
             <ThemeSwitch/>

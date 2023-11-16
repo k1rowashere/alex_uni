@@ -68,13 +68,10 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for RemSeatsWs {
 
 pub async fn rem_seats_ws(
     req: HttpRequest,
+    pool: web::Data<sqlx::SqlitePool>,
     stream: web::Payload,
 ) -> Result<HttpResponse, Error> {
     // TODO: check for auth
     // TODO: check if registration is active for student_id
-    let pool = req
-        .app_data::<sqlx::SqlitePool>()
-        .expect("Expected DB pool in app data");
-
-    ws::start(RemSeatsWs::new(pool.clone()), &req, stream)
+    ws::start(RemSeatsWs::new(pool.get_ref().clone()), &req, stream)
 }

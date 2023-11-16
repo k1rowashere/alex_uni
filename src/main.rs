@@ -25,21 +25,20 @@ async fn main() -> std::io::Result<()> {
         .expect("Failed to run sqlx migrations");
 
     HttpServer::new(move || {
+        use uni_web::registration::rem_seats_ws::rem_seats_ws;
+
         let leptos_options = &conf.leptos_options;
         let site_root = &leptos_options.site_root;
 
         App::new()
             .route("/api/{tail:.*}", leptos_actix::handle_server_fns())
-            .route(
-                "/ws/rem_seats",
-                web::get().to(uni_web::registration::rem_seats_ws::rem_seats_ws),
-            )
+            .route("/ws/rem_seats", web::get().to(rem_seats_ws))
             .service(Files::new("/pkg", format!("{site_root}/pkg")))
             .service(Files::new("/assets", site_root))
             .service(favicon)
             .leptos_routes(leptos_options.to_owned(), routes.to_owned(), App)
             .app_data(web::Data::new(leptos_options.to_owned()))
-            .app_data(pool.clone())
+            .app_data(web::Data::new(pool.clone()))
             .wrap(middleware::Compress::default())
     })
     .bind(&addr)?

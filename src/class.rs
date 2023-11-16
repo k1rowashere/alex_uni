@@ -107,7 +107,16 @@ impl std::fmt::Display for Location {
 }
 
 #[derive(
-    Hash, Clone, PartialEq, Eq, Deserialize, Serialize, Copy, Display, FromRepr, IntoStaticStr
+    Hash,
+    Clone,
+    PartialEq,
+    Eq,
+    Deserialize,
+    Serialize,
+    Copy,
+    Display,
+    FromRepr,
+    IntoStaticStr,
 )]
 #[cfg_attr(
     feature = "ssr",
@@ -160,7 +169,15 @@ pub struct Class {
 
 impl std::fmt::Debug for Class {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "class_id: {}", self.id.0)
+        f.debug_struct("Class")
+            .field("id", &self.id.0)
+            .field("ctype", &self.ctype.to_string())
+            .field("code", &self.code)
+            .field("name", &self.name)
+            .field("location", &self.location.to_string())
+            .field("day", &self.day.to_string())
+            .field("period", &self.period)
+            .finish()
     }
 }
 

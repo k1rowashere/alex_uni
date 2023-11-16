@@ -8,15 +8,9 @@ use super::{rem_seats_ws::RemSeatsMsg, Subject};
 
 #[cfg(feature = "ssr")]
 #[cached::proc_macro::cached(time = 1000, time_refresh, result)]
-pub(super) async fn subject_by_id(
-    s: SubjectId,
-) -> sqlx::Result<Option<Subject>> {
+pub async fn subject_by_id(s: SubjectId) -> sqlx::Result<Option<Subject>> {
     use crate::class::*;
-
-    let req = expect_context::<actix_web::HttpRequest>();
-    let pool = req
-        .app_data::<sqlx::Pool<sqlx::Sqlite>>()
-        .expect("DB ctx not found");
+    let pool = crate::utils::extract_pool().await;
 
     let (group, max_seats) = {
         let query = sqlx::query!(
@@ -29,7 +23,7 @@ pub(super) async fn subject_by_id(
             "#,
             s
         )
-        .fetch_one(pool)
+        .fetch_one(&pool)
         .await?;
 
         (query.group_no as u8, query.max_seats as u32)
@@ -44,7 +38,7 @@ pub(super) async fn subject_by_id(
         "#,
         s
     )
-    .fetch_optional(pool)
+    .fetch_optional(&pool)
     .await?
     .map(|c| c.into()) else {
         return Ok(None);
@@ -59,7 +53,7 @@ pub(super) async fn subject_by_id(
         "#,
         s
     )
-    .fetch_optional(pool)
+    .fetch_optional(&pool)
     .await?
     .map(|c| c.into());
 
@@ -72,7 +66,7 @@ pub(super) async fn subject_by_id(
         "#,
         s
     )
-    .fetch_optional(pool)
+    .fetch_optional(&pool)
     .await?
     .map(|c| c.into());
 
@@ -142,9 +136,7 @@ pub async fn register_subjects(
     use actix_broker::{Broker, SystemBroker};
 
     let req = expect_context::<actix_web::HttpRequest>();
-    let pool = req
-        .app_data::<sqlx::Pool<sqlx::Sqlite>>()
-        .expect("DB ctx not found");
+    let pool = crate::utils::extract_pool().await;
 
     // TODO: move this to a middleware
     let student_id = if let Some(uid) = crate::login::user_id_from_jwt(&req) {
@@ -164,7 +156,7 @@ pub async fn register_subjects(
         "#,
             student_id
         )
-        .fetch_all(pool)
+        .fetch_all(&pool)
         .await?
         .into_iter()
         .collect();
@@ -220,9 +212,7 @@ pub async fn get_subbed_subjects() -> Result<BTreeSet<SubjectId>, ServerFnError>
 
     let res = expect_context::<leptos_actix::ResponseOptions>();
     let req = expect_context::<actix_web::HttpRequest>();
-    let pool = req
-        .app_data::<sqlx::Pool<sqlx::Sqlite>>()
-        .ok_or(ServerFnError::ServerError("No DB context provided".into()))?;
+    let pool = crate::utils::extract_pool().await;
 
     let Some(student_id) = user_id_from_jwt(&req) else {
         res.set_status(actix_web::http::StatusCode::UNAUTHORIZED);
@@ -239,8 +229,11 @@ pub async fn get_subbed_subjects() -> Result<BTreeSet<SubjectId>, ServerFnError>
             "#,
         student_id
     )
-    .fetch_all(pool)
+    .fetch_all(&pool)
     .await?;
+
+    #[cfg(debug_assertions)]
+    println!("Subbed subjects: {:?}", &query);
 
     Ok(BTreeSet::from_iter(query))
 }
@@ -251,9 +244,7 @@ pub async fn get_registerable_subjects(
     use futures::{stream, StreamExt, TryStreamExt};
 
     let req = expect_context::<actix_web::HttpRequest>();
-    let pool = req
-        .app_data::<sqlx::SqlitePool>()
-        .expect("DB ctx not found");
+    let pool = crate::utils::extract_pool().await;
 
     let student_id = crate::login::user_id_from_jwt(&req);
     // TODO: check if registration is active for student_id
@@ -281,7 +272,7 @@ pub async fn get_registerable_subjects(
             GROUP BY s.id
             ORDER By s.level, s.name;
         "#, student_id)
-        .fetch_all(pool)
+        .fetch_all(&pool)
         .await?;
 
     let subjects = stream::iter(subjects_by_id)
@@ -302,6 +293,9 @@ pub async fn get_registerable_subjects(
         .buffer_unordered(4)
         .try_collect()
         .await?;
+
+    #[cfg(debug_assertions)]
+    println!("Subjects: {:#?}", &subjects);
 
     Ok(subjects)
 }

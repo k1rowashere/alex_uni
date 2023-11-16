@@ -55,9 +55,7 @@ pub async fn get_std_classes() -> Result<Vec<Class>, ServerFnError> {
 
     let res = expect_context::<leptos_actix::ResponseOptions>();
     let req = expect_context::<actix_web::HttpRequest>();
-    let pool = req
-        .app_data::<sqlx::Pool<sqlx::Sqlite>>()
-        .ok_or(ServerFnError::ServerError("No DB context provided".into()))?;
+    let pool = crate::utils::extract_pool().await;
 
     let Some(student_id) = user_id_from_jwt(&req) else {
         res.set_status(actix_web::http::StatusCode::UNAUTHORIZED);
@@ -77,7 +75,7 @@ pub async fn get_std_classes() -> Result<Vec<Class>, ServerFnError> {
         "#,
         student_id
     )
-    .fetch_all(pool)
+    .fetch_all(&pool)
     .await?;
 
     let mut classes: Vec<Class> = classes_db

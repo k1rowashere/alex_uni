@@ -71,7 +71,7 @@
   .switch_button {
     @apply text-gray-600 hover:text-gray-800 focus:text-gray-800 
       dark:text-gray-400 dark:hover:text-white dark:focus:text-white 
-      text-xl p-1 px-3 
+      p-1 px-3 
       data-[selected]:bg-indigo-400 
       data-[selected]:dark:bg-indigo-500
       data-[selected]:!text-white;

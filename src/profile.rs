@@ -1,4 +1,3 @@
-#![allow(clippy::needless_lifetimes)]
 use leptos::*;
 use serde::{Deserialize, Serialize};
 
@@ -56,9 +55,7 @@ struct ContactInfo {
 #[server(encoding = "GetJson")]
 async fn get_std_perosonal_info() -> Result<ProfileInfo, ServerFnError> {
     let req = expect_context::<actix_web::HttpRequest>();
-    let pool = req
-        .app_data::<sqlx::Pool<sqlx::Sqlite>>()
-        .expect("Expected SqlitePool");
+    let pool = crate::utils::extract_pool().await;
 
     let student_id = if let Some(sid) = crate::login::user_id_from_jwt(&req) {
         sid
@@ -83,7 +80,7 @@ async fn get_std_perosonal_info() -> Result<ProfileInfo, ServerFnError> {
         "#,
         student_id
     )
-    .fetch_one(pool)
+    .fetch_one(&pool)
     .await?;
 
     let p = ProfileInfo {

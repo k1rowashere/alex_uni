@@ -4,32 +4,17 @@ use leptos::*;
 use leptos_router::*;
 use wasm_bindgen::JsCast;
 
-pub trait Unzip<T1, T2, const N: usize> {
-    fn unzip(self) -> ([T1; N], [T2; N]);
+#[cfg(feature = "ssr")]
+pub async fn extract_pool() -> sqlx::SqlitePool {
+    use actix_web::web::Data;
+    use leptos_actix::extractor;
+    use sqlx::SqlitePool;
+
+    let data = extractor::<Data<SqlitePool>>().await.unwrap();
+    data.get_ref().clone()
 }
 
-impl<T1, T2, const N: usize> Unzip<T1, T2, N> for [(T1, T2); N] {
-    /// https://lib.rs/crates/unzip-array-of-tuple
-    /// unzip an array of tuple into a tuple of (two arrays)
-    fn unzip(self) -> ([T1; N], [T2; N]) {
-        use std::mem::{self, MaybeUninit};
-
-        let mut first: [MaybeUninit<T1>; N] =
-            unsafe { MaybeUninit::uninit().assume_init() };
-        let mut second: [MaybeUninit<T2>; N] =
-            unsafe { MaybeUninit::uninit().assume_init() };
-
-        for (idx, a) in self.into_iter().enumerate() {
-            first[idx] = MaybeUninit::new(a.0);
-            second[idx] = MaybeUninit::new(a.1);
-        }
-
-        // should be safe, as MaybeUninit doesn't have Drop
-        unsafe { (mem::transmute_copy(&first), mem::transmute_copy(&second)) }
-    }
-}
-
-/// same as `leptos_router::create_query_signal` but with NavigateOptions::replace = true
+/// same as `leptos_router::create_query_signal` but with `NavigateOptions::replace = true`
 pub fn create_query_signal<T>(
     key: impl Into<Oco<'static, str>>,
 ) -> (Memo<Option<T>>, SignalSetter<Option<T>>)

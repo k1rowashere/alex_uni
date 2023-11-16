@@ -32,15 +32,13 @@ async fn auth(
     username: String,
     password: String,
 ) -> Result<Option<UserId>, ServerFnError> {
-    let req = expect_context::<actix_web::HttpRequest>();
-    let pool = req
-        .app_data::<sqlx::SqlitePool>()
-        .expect("Expected SqlitePool");
+    let pool = crate::utils::extract_pool().await;
+
     let query = sqlx::query!(
         "SELECT id, password FROM users WHERE username = ?",
         username
     )
-    .fetch_optional(pool)
+    .fetch_optional(&pool)
     .await?
     .map(|r| (r.id, r.password));
 
@@ -138,9 +136,7 @@ pub fn user_id_from_jwt(req: &actix_web::HttpRequest) -> Option<UserId> {
 #[server]
 pub async fn get_user_info() -> Result<Option<User>, ServerFnError> {
     let req = expect_context::<actix_web::HttpRequest>();
-    let pool = req
-        .app_data::<sqlx::SqlitePool>()
-        .expect("Expected SqlitePool");
+    let pool = crate::utils::extract_pool().await;
 
     let user_id = user_id_from_jwt(&req);
 
@@ -151,7 +147,7 @@ pub async fn get_user_info() -> Result<Option<User>, ServerFnError> {
                 r#"SELECT id, name FROM users WHERE id=?"#,
                 uid
             )
-            .fetch_optional(pool)
+            .fetch_optional(&pool)
             .await?;
             Ok(user)
         }

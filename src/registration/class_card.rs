@@ -12,11 +12,12 @@ pub fn ClassCard(subject: Subject) -> impl IntoView {
 
     let on_click = move |_| subjects_ctx.toggle(id);
     let is_selected = subjects_ctx.is_selected(id);
+    let has_changed = subjects_ctx.has_changed(id);
     let has_collisions = subjects_ctx.has_collisions(id);
 
     let prof = extract_prof_name(&lec);
     let sec_no = sec_no(&tut, &lab);
-    let rem_seats = Memo::new(rem_seats(id, is_selected));
+    let rem_seats = Memo::new(rem_seats(id, is_selected, has_changed));
 
     let format_class_time = |c: Class| {
         view! {
@@ -40,11 +41,13 @@ pub fn ClassCard(subject: Subject) -> impl IntoView {
         }
     };
 
+    // w-full sm:w-1/2 md:w-1/4 xl:w-1/5 2xl:w-1/6 h-min \
     view! {
         <div class="p-2 my-2 rounded-xl dark:shadow-gray-700 shadow-md \
                     bg-indigo-50 dark:bg-indigo-950 dark:bg-opacity-20 \
-                    w-full sm:w-1/2 md:w-1/3 xl:w-1/5 2xl:w-1/6 h-min \
-                    border-2 border-transparent hover:!border-indigo-300 \
+                    border-2 border-transparent \
+                    hover:translate-x-0.5 hover:translate-y-0.5 hover:!border-indigo-700 \
+                    transition-all \
                     flex flex-col gap-1 \
                     data-[selected]:border-indigo-300 data-[invalid]:!border-red-300 \
                     "
@@ -111,17 +114,26 @@ fn sec_no<'a>(
 
 fn rem_seats(
     id: super::SubjectId,
-    _is_selected: Memo<bool>,
+    is_selected: Signal<bool>,
+    has_changed: Signal<bool>,
 ) -> impl Fn(Option<&u32>) -> u32 {
     let seats_ctx = expect_context::<Seats>();
     move |prev| {
-        seats_ctx.with(|s| {
+        let ws_count = seats_ctx.with(|s| {
             s.iter()
                 .find_map(|&(sid, seats)| (sid == id).then_some(seats))
                 .or(prev.cloned())
                 .unwrap_or_default()
-        })
-        // TODO: subtract one if selected and not saved
-        // - if is_selected() { 1 } else { 0 }
+        });
+
+        if has_changed() {
+            if is_selected() {
+                ws_count.checked_sub(1).unwrap_or_default()
+            } else {
+                ws_count + 1
+            }
+        } else {
+            ws_count
+        }
     }
 }
