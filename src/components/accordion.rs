@@ -1,4 +1,3 @@
-use crate::icon;
 use leptos::*;
 use uuid::Uuid;
 
@@ -34,8 +33,8 @@ where
 
     let (open, on_click): (Signal<_>, Box<dyn FnMut(_)>) = {
         if interlocking {
-            let Context(open_id) = use_context()
-            .expect("`AccordionItem` must be a child of `Accordion`, if `interlocking` is true");
+            let Context(open_id) =
+                use_context().expect("`AccordionItem` must be a child of `Accordion`, if `interlocking` is true");
 
             // if start_open {
             //     open_id.set_untracked(Some(id));
@@ -43,9 +42,7 @@ where
             let open = move || open_id.with(|i| *i == Some(id));
 
             let on_click = move |_| {
-                open_id.update(|i| {
-                    *i = if *i == Some(id) { None } else { Some(id) }
-                });
+                open_id.update(|i| *i = if *i == Some(id) { None } else { Some(id) });
             };
 
             (open.into_signal(), Box::new(on_click))
@@ -76,7 +73,7 @@ where
                 on:click=on_click
             >
                 {head()}
-                {icon!("mdi/chevron-down", "transition-transform").class("-rotate-180", open)}
+                // {icon!("mdi/chevron-down", "transition-transform").class("-rotate-180", open)}
             </button>
             <div
                 ref=list

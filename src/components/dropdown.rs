@@ -1,7 +1,6 @@
-#![allow(non_snake_case)]
 use leptos::{ev::MouseEvent, *};
 
-use crate::utils::unfocus_on_select;
+// use crate::utils::unfocus_on_select;
 
 #[component]
 pub(crate) fn dropdown<F, IV>(
@@ -46,7 +45,7 @@ where
                 id=label
                 class=DROPDOWN_CLASS
                 class:block=open
-                on:click=unfocus_on_select
+                // on:click=unfocus_on_select
             >
                 {children()}
             </ul>
@@ -68,7 +67,7 @@ where
 {
     const ITEM: &str = "w-full flex items-center px-4 py-2 hover:bg-gray-200 focus:bg-gray-200 \
                         dark:hover:bg-gray-600 dark:focus:bg-gray-600 focus:outline-none \
-                        aria-selected:text-indigo-500";
+                        aria-selected:text-blue-700";
     const TOP_SEPARATOR: &str = "top-separator";
 
     let class = format!(
@@ -95,7 +94,7 @@ pub(crate) fn DropdownLinkItem(
 ) -> impl IntoView {
     const ITEM: &str = "w-full flex text-left px-4 py-2 hover:bg-gray-200 focus:bg-gray-200 \
                         dark:hover:bg-gray-600 dark:focus:bg-gray-600 focus:outline-none \
-                        aria-selected:text-indigo-500 dark:aria-selected:text-indigo-500";
+                        aria-selected:text-blue-500 dark:aria-selected:text-blue-500";
     const TOP_SEPARATOR: &str = "top-separator";
 
     let class = format!(

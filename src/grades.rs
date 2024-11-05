@@ -1,3 +1,4 @@
+#![cfg(feature = "ssr")]
 use leptos::*;
 use serde::{Deserialize, Serialize};
 // TODO:

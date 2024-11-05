@@ -1,62 +1,98 @@
-#[cfg(feature = "ssr")]
+// mod app;
+// mod class;
+// mod components;
+// mod grades;
+mod auth;
+mod profile;
+// mod registration;
+// mod timetable;
+mod pages;
+mod utils;
+
+use std::sync::LazyLock;
+
+use actix_files::{Files, NamedFile};
+use actix_identity::IdentityMiddleware;
+use actix_session::{config::PersistentSession, storage::CookieSessionStore, SessionMiddleware};
+use actix_web::*;
+use cookie::time::Duration;
+
+use tera::Tera;
+use utils::*;
+
+const WEEK: u64 = 60 * 60 * 24 * 7;
+
+pub static TEMPLATES: LazyLock<Tera> = LazyLock::new(|| {
+    let site_root = get_env("SITE_ROOT");
+    let icons = format!("{site_root}/assets/icons");
+
+    let mut tera = Tera::new(&format!("{site_root}/pages/**/*.html")).unwrap();
+    tera.add_template_files([
+        (format!("{icons}/spinner.svg"), Some("spinner.svg")),
+        (format!("{icons}/show_hide.svg"), Some("show_hide.svg")),
+    ])
+    .unwrap();
+
+    tera.register_filter("svg_icon", utils::svg_icon_filter);
+    tera
+});
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    use actix_files::Files;
-    use actix_web::*;
-    use leptos::*;
-    use leptos_actix::{generate_route_list, LeptosRoutes};
-    use uni_web::app::*;
-
     let _ = dotenvy::dotenv();
+    let site_addr = get_env("SITE_ADDR");
+    let site_root = get_env("SITE_ROOT");
 
-    let conf = get_configuration(None).await.unwrap();
-    let addr = conf.leptos_options.site_addr;
-    let routes = generate_route_list(App);
-    let pool = sqlx::SqlitePool::connect(
-        std::env::var("DATABASE_URL")
-            .expect("Missing DATABASE_URL")
-            .as_str(),
-    )
-    .await
-    .expect("Failed to connect to DB");
+    let db = sqlx::SqlitePool::connect(&get_env("DATABASE_URL"))
+        .await
+        .expect("Failed to connect to DB");
+
     sqlx::migrate!()
-        .run(&pool)
+        .run(&db)
         .await
         .expect("Failed to run sqlx migrations");
 
     HttpServer::new(move || {
-        use uni_web::registration::rem_seats_ws::rem_seats_ws;
-
-        let leptos_options = &conf.leptos_options;
-        let site_root = &leptos_options.site_root;
-
         App::new()
-            .route("/api/{tail:.*}", leptos_actix::handle_server_fns())
-            .route("/ws/rem_seats", web::get().to(rem_seats_ws))
-            .service(Files::new("/pkg", format!("{site_root}/pkg")))
-            .service(Files::new("/assets", site_root))
+            .service(Files::new("/assets", format!("{site_root}/assets")))
+            .service(Files::new("/style", format!("{site_root}/style")))
             .service(favicon)
-            .leptos_routes(leptos_options.to_owned(), routes.to_owned(), App)
-            .app_data(web::Data::new(leptos_options.to_owned()))
-            .app_data(web::Data::new(pool.clone()))
+            .service(pages::login)
+            .service(pages::signup)
+            .service(
+                web::scope("/api")
+                    .route("/login", web::post().to(auth::login))
+                    .route("/logout", web::post().to(auth::logout))
+                    .route("/profile_icon", web::get().to(profile::get_profile_icon)),
+            )
+            .service(
+                web::scope("")
+                    .service(pages::home)
+                    .wrap(middleware::from_fn(auth::auth_wrapper)),
+            )
+            .default_service(web::to(pages::not_found))
             .wrap(middleware::Compress::default())
+            .wrap(
+                IdentityMiddleware::builder()
+                    .visit_deadline(Some(std::time::Duration::new(20 * WEEK, 0)))
+                    .build(),
+            )
+            .wrap(
+                SessionMiddleware::builder(CookieSessionStore::default(), get_secret())
+                    .session_lifecycle(
+                        PersistentSession::default().session_ttl(Duration::weeks(100)),
+                    )
+                    .build(),
+            )
+            .app_data(web::Data::new(db.clone()))
     })
-    .bind(&addr)?
+    .bind(&site_addr)?
     .run()
     .await
 }
 
-#[cfg(feature = "ssr")]
-#[actix_web::get("favicon.ico")]
-async fn favicon(
-    leptos_options: actix_web::web::Data<leptos::LeptosOptions>,
-) -> actix_web::Result<actix_files::NamedFile> {
-    use actix_files::NamedFile;
-
-    let leptos_options = leptos_options.into_inner();
-    let site_root = &leptos_options.site_root;
-    Ok(NamedFile::open(format!("{site_root}/favicon.webp"))?)
+#[get("favicon.ico")]
+async fn favicon() -> actix_web::Result<NamedFile> {
+    let site_root = get_env("SITE_ROOT");
+    Ok(NamedFile::open(format!("{site_root}/assets/favicon.svg"))?)
 }
-
-#[cfg(not(any(feature = "ssr", feature = "csr")))]
-pub fn main() {}

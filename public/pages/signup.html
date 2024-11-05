@@ -1,0 +1,85 @@
+{% extends "partial/html_shell.html" %} {% block title %}Log in{% endblock title %}
+<!-- Remove The nav: -->
+{% block nav %}{% endblock nav %} {% block body %} {{ super() }}
+<script>
+  let login_form = document.getElementById("login_form");
+  let validate = () => {
+    let password = document.querySelector("[name=password]");
+    let password2 = document.querySelector("[name=password2]");
+
+    if (password.value !== password2.value && !password2.disabled) {
+      password2.setCustomValidity("Passwords do not match");
+    } else {
+      password2.setCustomValidity("");
+    }
+  };
+
+  document.body.addEventListener("htmx:beforeSwap", function (evt) {
+    if (evt.detail.xhr.status === 400) {
+      login_form.classList.add("invalid");
+      evt.detail.shouldSwap = true;
+      evt.detail.isError = false;
+    } else if (evt.detail.xhr.status === 404) {
+      window.location.href = "/";
+    }
+  });
+  let clear_invalid = () => login_form.classList.remove("invalid");
+  let add_submit = () => login_form.classList.add("submit");
+  let toggle_password = (event) => {
+    let password = document.querySelector("[name=password]");
+    let password2 = document.querySelector("[name=password2]");
+    password.type = password.type === "password" ? "text" : "password";
+    // disable the retype since the user can see the password
+    password2.value = null;
+    password2.disabled = password2.disabled ? false : true;
+
+    event.currentTarget.classList.toggle("show");
+  };
+</script>
+{% endblock body %} {% block mainclass %}grid justify-center content-center h-dvh{% endblock mainclass %} {% block main
+%}
+<div class="bg-white flex max-md:flex-col gap-10 md:gap-32 rounded-2xl p-8 shadow-xl">
+  {% if is_redirect %}
+  <p>Login first to access the requested page</p>
+  {% endif %}
+  <div class="flex flex-col gap-5 items-start">
+    <img class="md:h-20 max-md:w-8/12 aspect-[232.433/80]" src="/assets/alexu_logo_ltr.svg" />
+    <h1 class="text-2xl font-bold">Sign Up</h1>
+  </div>
+  <form hx-post="/api/signup" hx-indicator="#submit" hx-target="#login_error" hx-trigger="submit throttle:200ms"
+    hx-swap="innerHTML" id="login_form" class="flex flex-col gap-3 pt-8 md:min-w-[20vw] max-md:min-w-[70vw]">
+    <div class="relative flex">
+      <input
+        class="grow rounded border-gray-300 disabled:bg-gray-300 border focus:border-blue-700 shadow focus:ring-2 ring-blue-300 p-2 outline-none transition-all"
+        placeholder="" name="username" id="username" autocomplete="username" oninput="clear_invalid()"
+        hx-get="/api/validate_uname" hx-trigger="load,keyup delay:200ms changed" hx-target="#valid_user"
+        hx-swap="innerHTML" hx-indicator="#user_indicator" minlength="3" required />
+      <label for="username" class="text-gray-500 font-thin input_label">Username</label>
+      <div id="user_indicator" class="absolute right-2 self-center text-lg group">
+        <div id="valid_user" class="group-[.htmx-request]:hidden"></div>
+        <span class="h-[1em] group-[.htmx-request]:block hidden"> {% include "spinner.svg" %} </span>
+      </div>
+    </div>
+    {{ cmp::my_input( name=`email`, display_name=`Email`, required=true, autocomplete=`email`, type=`email`) }}
+    {{ cmp::my_input( name=`name`, display_name=`Full Name`, required=true, autocomplete=`name` ) }}
+    {{ cmp::my_input( name=`password`, display_name=`Password`, required=true, type=`password`, minlength=8,
+    hxvalidate=`validate()` ) }}
+    {{ cmp::my_input( name=`password2`, display_name=`Re-type Password`, type=`password`, ) }}
+    <span id="login_error" class="text-sm text-red-400 h-5"></span>
+    <span class="flex text-sm w-fit text-gray pt-1">
+      Already have and account?&nbsp;<a href="/login" class="underline hover:font-bold">Log In.</a>
+    </span>
+    <button id="#submit" class="group h-10 bg-blue-700 hover:bg-blue-800 text-white rounded shadow" type="submit"
+      onclick="add_submit()">
+      <span class="h-full p-2 mx-auto group-[.htmx-request]:block hidden">
+        {% filter replace(from='svg_spinner', to='another_id') %}
+        <!---->
+        {% include "spinner.svg" %}
+        <!---->
+        {% endfilter %}
+      </span>
+      <span class="font-semibold group-[.htmx-request]:hidden">Create Account</span>
+    </button>
+  </form>
+</div>
+{% endblock main %}

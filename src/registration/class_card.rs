@@ -3,11 +3,17 @@ use leptos::*;
 use super::subjects_signal::SubjectsSignal;
 use super::{Seats, Subject};
 use crate::class::{Class, Type as ClassType};
-use crate::icon;
 
 #[component]
 pub fn ClassCard(subject: Subject) -> impl IntoView {
-    let Subject { id, max_seats, group, lec, tut, lab } = subject;
+    let Subject {
+        id,
+        max_seats,
+        group,
+        lec,
+        tut,
+        lab,
+    } = subject;
     let subjects_ctx = expect_context::<SubjectsSignal>();
 
     let on_click = move |_| subjects_ctx.toggle(id);
@@ -30,11 +36,11 @@ pub fn ClassCard(subject: Subject) -> impl IntoView {
                     }}
                 </div>
                 <div>
-                    {icon!("mdi/calendar-today", "mx-1 text-indigo-300 inline-block align-middle")}
+                    // {icon!("mdi/calendar-today", "mx-1 text-blue-300 inline-block align-middle")}
                     {c.day.short_name()}
                 </div>
                 <div>
-                    {icon!("mdi/clock-outline", "mx-1 text-indigo-300 inline-block align-middle")}
+                    // {icon!("mdi/clock-outline", "mx-1 text-blue-300 inline-block align-middle")}
                     {format_period(c.period)}
                 </div>
             </div>
@@ -44,17 +50,17 @@ pub fn ClassCard(subject: Subject) -> impl IntoView {
     // w-full sm:w-1/2 md:w-1/4 xl:w-1/5 2xl:w-1/6 h-min \
     view! {
         <div class="p-2 my-2 rounded-xl dark:shadow-gray-700 shadow-md \
-                    bg-indigo-50 dark:bg-indigo-950 dark:bg-opacity-20 \
+                    bg-blue-50 dark:bg-blue-950 dark:bg-opacity-20 \
                     border-2 border-transparent \
-                    hover:translate-x-0.5 hover:translate-y-0.5 hover:!border-indigo-700 \
+                    hover:translate-x-0.5 hover:translate-y-0.5 hover:!border-blue-700 \
                     transition-all \
                     flex flex-col gap-1 \
-                    data-[selected]:border-indigo-300 data-[invalid]:!border-red-300 \
+                    data-[selected]:border-blue-300 data-[invalid]:!border-red-300 \
                     "
             data-selected=is_selected
             data-invalid=has_collisions
         >
-            <p class="uppercase text-indigo-500 dark:text-indigo-300">
+            <p class="uppercase text-blue-700 dark:text-blue-300">
                 {"Group "} {group}
                 {sec_no.map(|&sn| format!(" - Section {}", sn as u8))}
             </p>
@@ -67,13 +73,13 @@ pub fn ClassCard(subject: Subject) -> impl IntoView {
                 class=move || if is_selected() { "btn-primary-outline" } else { "btn-primary" }
                 on:click=on_click
             >
-                {move ||
-                    if is_selected() {
-                        icon!("mdi/minus-box")
-                    } else {
-                        icon!("mdi/plus-box")
-                    }.classes("inline-block align-middle")
-                }
+                // {move ||
+                //     if is_selected() {
+                        // icon!("mdi/minus-box")
+                //     } else {
+                        // icon!("mdi/plus-box")
+                //     }.classes("inline-block align-middle")
+                // }
                 {move || if is_selected() { "Added" } else { "Add" }}
                 <span class="text-xs font-thin">
                     {move || format!(" ({} / {})", rem_seats(), max_seats)}
@@ -103,13 +109,13 @@ fn sec_no<'a>(
     tut: &'a Option<Class>,
     lab: &'a Option<Class>,
 ) -> Option<&'a crate::timetable::Section> {
-    [tut.as_ref(), lab.as_ref()].iter().flatten().find_map(
-        |Class { ctype, .. }| match ctype {
-            ClassType::Tutorial { sec_no, .. }
-            | ClassType::Lab { sec_no, .. } => Some(sec_no),
+    [tut.as_ref(), lab.as_ref()]
+        .iter()
+        .flatten()
+        .find_map(|Class { ctype, .. }| match ctype {
+            ClassType::Tutorial { sec_no, .. } | ClassType::Lab { sec_no, .. } => Some(sec_no),
             _ => None,
-        },
-    )
+        })
 }
 
 fn rem_seats(

@@ -24,10 +24,7 @@ where
 
 /// Assumes list is sorted by day of week and period
 #[component]
-pub fn TimetableList(
-    data: Vec<Class>,
-    #[prop(optional, into)] flags: MaybeSignal<TimetableFlags>,
-) -> impl IntoView {
+pub fn TimetableList(data: Vec<Class>, #[prop(optional, into)] flags: MaybeSignal<TimetableFlags>) -> impl IntoView {
     let time_style = create_read_slice(flags, |f| f.time_style);
     let show_loc = create_read_slice(flags, |f| f.show_loc);
     let show_prof = create_read_slice(flags, |f| f.show_prof);

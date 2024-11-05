@@ -1,11 +1,10 @@
 use leptos::*;
-use wasm_bindgen::JsCast;
 
 /// Returns the value of a checkbox input element
-fn is_checked(e: &web_sys::Event) -> Option<bool> {
-    e.target()
-        .map(|t| t.unchecked_into::<web_sys::HtmlInputElement>().checked())
-}
+// fn is_checked(e: &web_sys::Event) -> Option<bool> {
+//     e.target()
+//         .map(|t| t.unchecked_into::<web_sys::HtmlInputElement>().checked())
+// }
 
 #[component]
 pub fn checkbox(
@@ -19,7 +18,7 @@ pub fn checkbox(
             type="checkbox"
             id=id
             checked=getter
-            on:change=move |e| setter(is_checked(&e))
+            // on:change=move |e| setter(is_checked(&e))
         />
         <label for=id>{children()}</label>
     }

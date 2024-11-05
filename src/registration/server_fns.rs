@@ -1,16 +1,17 @@
+#![cfg(feature = "ssr")]
 use std::collections::BTreeSet;
 
 use super::{SubjectChoices, SubjectId};
+use actix_web::web::Data;
 use leptos::*;
+use sqlx::SqlitePool;
 
-#[cfg(feature = "ssr")]
-use super::{rem_seats_ws::RemSeatsMsg, Subject};
+use super::Subject;
 
-#[cfg(feature = "ssr")]
-#[cached::proc_macro::cached(time = 1000, time_refresh, result)]
-pub async fn subject_by_id(s: SubjectId) -> sqlx::Result<Option<Subject>> {
+// #[cached::proc_macro::cached(time = 1000, time_refresh, result)]
+pub async fn subject_by_id(s: SubjectId, pool: Data<SqlitePool>) -> sqlx::Result<Option<Subject>> {
     use crate::class::*;
-    let pool = crate::utils::extract_pool().await;
+    let pool = pool.get_ref();
 
     let (group, max_seats) = {
         let query = sqlx::query!(
@@ -23,7 +24,7 @@ pub async fn subject_by_id(s: SubjectId) -> sqlx::Result<Option<Subject>> {
             "#,
             s
         )
-        .fetch_one(&pool)
+        .fetch_one(pool)
         .await?;
 
         (query.group_no as u8, query.max_seats as u32)
@@ -38,7 +39,7 @@ pub async fn subject_by_id(s: SubjectId) -> sqlx::Result<Option<Subject>> {
         "#,
         s
     )
-    .fetch_optional(&pool)
+    .fetch_optional(pool)
     .await?
     .map(|c| c.into()) else {
         return Ok(None);
@@ -53,7 +54,7 @@ pub async fn subject_by_id(s: SubjectId) -> sqlx::Result<Option<Subject>> {
         "#,
         s
     )
-    .fetch_optional(&pool)
+    .fetch_optional(pool)
     .await?
     .map(|c| c.into());
 
@@ -66,7 +67,7 @@ pub async fn subject_by_id(s: SubjectId) -> sqlx::Result<Option<Subject>> {
         "#,
         s
     )
-    .fetch_optional(&pool)
+    .fetch_optional(pool)
     .await?
     .map(|c| c.into());
 
@@ -80,51 +81,45 @@ pub async fn subject_by_id(s: SubjectId) -> sqlx::Result<Option<Subject>> {
 
 /// Returns the remaining seats for the given subjects
 /// if `None` given, returns the remaining seats for all subjects
-#[cfg(feature = "ssr")]
-pub async fn get_rem_seats(
-    subjects: &[SubjectId],
-    pool: sqlx::SqlitePool,
-) -> Result<RemSeatsMsg, ServerFnError> {
-    let query = if !subjects.is_empty() {
-        let query_str = format!(
-            r#"
-                SELECT ts.id, 
-                    (ts.max_seats - COUNT(tsub.term_subject_id)) as rem_seats
-                FROM term_subjects AS ts
-                LEFT JOIN term_subscribers AS tsub 
-                    ON ts.id = tsub.term_subject_id
-                WHERE ts.id IN (?{})
-                GROUP BY ts.id
-            "#,
-            ", ?".repeat(subjects.len() - 1)
-        );
-        let mut query = sqlx::query_as(&query_str);
-        for s in subjects {
-            query = query.bind(s);
-        }
-        query.fetch_all(&pool).await
-    } else {
-        sqlx::query_as(
-            r#"
-                SELECT ts.id, 
-                    (ts.max_seats - COUNT(tsub.term_subject_id)) as rem_seats
-                FROM term_subjects AS ts
-                LEFT JOIN term_subscribers AS tsub 
-                    ON ts.id = tsub.term_subject_id
-                GROUP BY ts.id
-            "#,
-        )
-        .fetch_all(&pool)
-        .await
-    };
+// #[cfg(feature = "ssr")]
+// pub async fn get_rem_seats(subjects: &[SubjectId], pool: sqlx::SqlitePool) -> Result<RemSeatsMsg, ServerFnError> {
+//     let query = if !subjects.is_empty() {
+//         let query_str = format!(
+//             r#"
+//                 SELECT ts.id,
+//                     (ts.max_seats - COUNT(tsub.term_subject_id)) as rem_seats
+//                 FROM term_subjects AS ts
+//                 LEFT JOIN term_subscribers AS tsub
+//                     ON ts.id = tsub.term_subject_id
+//                 WHERE ts.id IN (?{})
+//                 GROUP BY ts.id
+//             "#,
+//             ", ?".repeat(subjects.len() - 1)
+//         );
+//         let mut query = sqlx::query_as(&query_str);
+//         for s in subjects {
+//             query = query.bind(s);
+//         }
+//         query.fetch_all(&pool).await
+//     } else {
+//         sqlx::query_as(
+//             r#"
+//                 SELECT ts.id,
+//                     (ts.max_seats - COUNT(tsub.term_subject_id)) as rem_seats
+//                 FROM term_subjects AS ts
+//                 LEFT JOIN term_subscribers AS tsub
+//                     ON ts.id = tsub.term_subject_id
+//                 GROUP BY ts.id
+//             "#,
+//         )
+//         .fetch_all(&pool)
+//         .await
+//     };
+//
+//     Ok(RemSeatsMsg(query?))
+// }
 
-    Ok(RemSeatsMsg(query?))
-}
-
-#[server]
-pub async fn register_subjects(
-    #[server(default)] new: BTreeSet<SubjectId>,
-) -> Result<(), ServerFnError> {
+pub async fn register_subjects(new: BTreeSet<SubjectId>, pool: Data<SqlitePool>) -> Result<(), ServerFnError> {
     // TODO: Collision detection
     //       Deduping
     //       (preferably on DB):
@@ -132,20 +127,21 @@ pub async fn register_subjects(
     //       Pre-requirements check
     //       Credit hrs total check
     //       Remaining seats check
+    let pool = pool.get_ref();
 
     use actix_broker::{Broker, SystemBroker};
 
     let req = expect_context::<actix_web::HttpRequest>();
-    let pool = crate::utils::extract_pool().await;
 
     // TODO: move this to a middleware
-    let student_id = if let Some(uid) = crate::login::user_id_from_jwt(&req) {
-        uid
-    } else {
-        expect_context::<leptos_actix::ResponseOptions>()
-            .set_status(actix_web::http::StatusCode::UNAUTHORIZED);
-        return Ok(());
-    };
+    // let student_id = if let Some(uid) = crate::login::user_id_from_jwt(&req) {
+    //     uid
+    // } else {
+    //     expect_context::<leptos_actix::ResponseOptions>()
+    //         .set_status(actix_web::http::StatusCode::UNAUTHORIZED);
+    //     return Ok(());
+    // };
+    let student_id = 124;
 
     let diff: Vec<_> = {
         let prev = sqlx::query_scalar!(
@@ -156,7 +152,7 @@ pub async fn register_subjects(
         "#,
             student_id
         )
-        .fetch_all(&pool)
+        .fetch_all(pool)
         .await?
         .into_iter()
         .collect();
@@ -180,8 +176,8 @@ pub async fn register_subjects(
         // using string formatting because sqlx doesn't support variable length bind params
         let query_str = format!(
             r#"
-            INSERT INTO term_subscribers (student_id, term_subject_id) 
-            SELECT ?, sid.* 
+            INSERT INTO term_subscribers (student_id, term_subject_id)
+            SELECT ?, sid.*
             FROM (VALUES (?){}) AS sid
             "#,
             ", (?)".repeat(new.len() - 1)
@@ -199,25 +195,22 @@ pub async fn register_subjects(
     tx.commit().await?;
 
     // Broadcast `rem_seats` changes to ws actors
-    Broker::<SystemBroker>::issue_async(
-        get_rem_seats(&diff, pool.clone()).await?,
-    );
+    // Broker::<SystemBroker>::issue_async(get_rem_seats(&diff, pool.clone()).await?);
     Ok(())
 }
 
-#[server(encoding = "GetJson")]
-pub async fn get_subbed_subjects() -> Result<BTreeSet<SubjectId>, ServerFnError>
-{
-    use crate::login::user_id_from_jwt;
+pub async fn get_subbed_subjects(pool: Data<SqlitePool>) -> Result<BTreeSet<SubjectId>, ServerFnError> {
+    // use crate::login::user_id_from_jwt;
 
     let res = expect_context::<leptos_actix::ResponseOptions>();
     let req = expect_context::<actix_web::HttpRequest>();
-    let pool = crate::utils::extract_pool().await;
+    let pool = pool.get_ref();
 
-    let Some(student_id) = user_id_from_jwt(&req) else {
-        res.set_status(actix_web::http::StatusCode::UNAUTHORIZED);
-        return Ok(BTreeSet::new());
-    };
+    // let Some(student_id) = user_id_from_jwt(&req) else {
+    //     res.set_status(actix_web::http::StatusCode::UNAUTHORIZED);
+    //     return Ok(BTreeSet::new());
+    // };
+    let student_id = 1234;
 
     let query = sqlx::query_scalar!(
         r#"
@@ -229,7 +222,7 @@ pub async fn get_subbed_subjects() -> Result<BTreeSet<SubjectId>, ServerFnError>
             "#,
         student_id
     )
-    .fetch_all(&pool)
+    .fetch_all(pool)
     .await?;
 
     #[cfg(debug_assertions)]
@@ -238,15 +231,14 @@ pub async fn get_subbed_subjects() -> Result<BTreeSet<SubjectId>, ServerFnError>
     Ok(BTreeSet::from_iter(query))
 }
 
-#[server(encoding = "GetJson")]
-pub async fn get_registerable_subjects(
-) -> Result<Vec<SubjectChoices>, ServerFnError> {
+pub async fn get_registerable_subjects(pool: Data<SqlitePool>) -> Result<Vec<SubjectChoices>, ServerFnError> {
     use futures::{stream, StreamExt, TryStreamExt};
 
     let req = expect_context::<actix_web::HttpRequest>();
-    let pool = crate::utils::extract_pool().await;
+    let pool = pool.get_ref();
 
-    let student_id = crate::login::user_id_from_jwt(&req);
+    // let student_id = crate::login::user_id_from_jwt(&req);
+    let student_id = 1234;
     // TODO: check if registration is active for student_id
 
     let subjects_by_id = sqlx::query!(
@@ -271,24 +263,21 @@ pub async fn get_registerable_subjects(
               )
             GROUP BY s.id
             ORDER By s.level, s.name;
-        "#, student_id)
-        .fetch_all(&pool)
-        .await?;
+        "#,
+        student_id
+    )
+    .fetch_all(pool)
+    .await?;
 
     let subjects = stream::iter(subjects_by_id)
         .map(|s| async move {
             let choices = stream::iter(s.choices.iter())
-                .map(|&s| subject_by_id(s))
+                .map(|&s| subject_by_id(s, todo!()))
                 .buffer_unordered(4)
                 .try_filter_map(|s| async move { Ok(s) })
                 .try_collect()
                 .await?;
-            Ok(SubjectChoices {
-                level: s.level,
-                name: s.name,
-                code: s.code,
-                choices,
-            }) as Result<_, sqlx::Error>
+            Ok(SubjectChoices { level: s.level, name: s.name, code: s.code, choices }) as Result<_, sqlx::Error>
         })
         .buffer_unordered(4)
         .try_collect()

@@ -1,0 +1,46 @@
+{% extends "partial/html_shell.html" %} {% block title %}Log in{% endblock title %}
+{# Remove The nav #}
+{% block nav %}{% endblock nav %} {% block body %} {{ super() }}
+<script>
+    let login_form = document.getElementById("login_form");
+
+    document.body.addEventListener("htmx:beforeSwap", function (evt) {
+        if (evt.detail.xhr.status === 401) {
+            login_form.classList.add("invalid");
+            evt.detail.shouldSwap = true;
+            evt.detail.isError = false;
+        } else if (evt.detail.xhr.status === 404) {
+            window.location.href = "/";
+        }
+    });
+    let clear_invalid = () => login_form.classList.remove("invalid");
+    let add_submit = () => login_form.classList.add("submit");
+</script>
+{% endblock body %} {% block mainclass %}grid justify-center content-center h-dvh{% endblock mainclass %} {% block main
+%}
+<div class="bg-white flex max-md:flex-col gap-10 md:gap-32 rounded-2xl p-8 shadow-xl">
+    {% if is_redirect %}
+    <p>Login first to access the requested page</p>
+    {% endif %}
+    <div class="flex flex-col gap-5 items-start">
+        <img class="md:h-20 max-md:w-8/12 aspect-[232.433/80]" src="/assets/alexu_logo_ltr.svg" />
+        <h1 class="text-2xl font-bold">Log In</h1>
+    </div>
+    <form hx-post="/api/login" hx-indicator="#submit" hx-target="#login_error" hx-trigger="submit throttle:200ms"
+        hx-swap="text" action="/api/login" method="post" id="login_form"
+        class="group flex flex-col gap-3 pt-8 md:min-w-[20vw] max-md:min-w-[70vw]">
+        {{ cmp::my_input( name=`username`, display_name=`Username or ID`, required=true, oninput=`clear_invalid()`,
+        autocomplete=`username` ) }}
+        {{ cmp::my_input( name=`password`, display_name=`Password`, required=true, oninput=`clear_invalid()`,
+        type=`password`, autocomplete=`current-password` ) }}
+        <span id="login_error" class="text-sm text-red-400 h-5"></span>
+        <a href="/forgot_password" class="w-fit mt-5 text-gray text-sm hover:underline">Forgot Password?</a>
+        <button id="submit"
+            class="group h-10 active:scale-95 transition bg-blue-700 hover:bg-blue-800 text-white rounded shadow"
+            type="submit" onclick="add_submit()">
+            <span class="h-full p-2 mx-auto group-[.htmx-request]:block hidden"> {% include "spinner.svg" %}</span>
+            <span class="font-semibold group-[.htmx-request]:hidden">Log In</span>
+        </button>
+    </form>
+</div>
+{% endblock main %}

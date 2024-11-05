@@ -1,12 +1,9 @@
+#![cfg(feature = "ssr")]
 use serde::{Deserialize, Serialize};
 use strum_macros::{Display, EnumIs, FromRepr, IntoStaticStr};
 
 #[derive(Hash, Copy, Clone, PartialEq, Eq, Deserialize, Serialize, Default)]
-#[cfg_attr(
-    feature = "ssr",
-    derive(sqlx::Type),
-    sqlx(rename_all = "snake_case")
-)]
+#[cfg_attr(feature = "ssr", derive(sqlx::Type), sqlx(rename_all = "snake_case"))]
 pub enum WeekParity {
     #[default]
     Both,
@@ -28,17 +25,9 @@ pub enum Section {
 /// Lab and tutorial classes can be bi-weekly and require section number
 #[derive(Hash, Clone, PartialEq, Eq, Deserialize, Serialize, EnumIs)]
 pub enum Type {
-    Lecture {
-        prof: String,
-    },
-    Lab {
-        sec_no: Section,
-        week_parity: WeekParity,
-    },
-    Tutorial {
-        sec_no: Section,
-        week_parity: WeekParity,
-    },
+    Lecture { prof: String },
+    Lab { sec_no: Section, week_parity: WeekParity },
+    Tutorial { sec_no: Section, week_parity: WeekParity },
 }
 
 impl std::fmt::Display for Type {
@@ -56,11 +45,7 @@ impl std::fmt::Display for Type {
 }
 
 #[derive(Hash, Clone, PartialEq, Eq, Deserialize, Serialize, Copy)]
-#[cfg_attr(
-    feature = "ssr",
-    derive(sqlx::Type),
-    sqlx(rename_all = "snake_case")
-)]
+#[cfg_attr(feature = "ssr", derive(sqlx::Type), sqlx(rename_all = "snake_case"))]
 pub enum Building {
     Electricity,
     Mechanics,
@@ -106,23 +91,8 @@ impl std::fmt::Display for Location {
     }
 }
 
-#[derive(
-    Hash,
-    Clone,
-    PartialEq,
-    Eq,
-    Deserialize,
-    Serialize,
-    Copy,
-    Display,
-    FromRepr,
-    IntoStaticStr,
-)]
-#[cfg_attr(
-    feature = "ssr",
-    derive(sqlx::Type),
-    sqlx(rename_all = "snake_case")
-)]
+#[derive(Hash, Clone, PartialEq, Eq, Deserialize, Serialize, Copy, Display, FromRepr, IntoStaticStr)]
+#[cfg_attr(feature = "ssr", derive(sqlx::Type), sqlx(rename_all = "snake_case"))]
 pub enum DayOfWeek {
     Saturday,
     Sunday,
@@ -206,14 +176,8 @@ pub mod db {
         fn into(self) -> Class {
             let ctype = match self.ctype.as_str() {
                 "lec" => Type::Lecture { prof: self.prof },
-                "lab" => Type::Lab {
-                    sec_no: self.section,
-                    week_parity: self.week_parity,
-                },
-                "tut" => Type::Tutorial {
-                    sec_no: self.section,
-                    week_parity: self.week_parity,
-                },
+                "lab" => Type::Lab { sec_no: self.section, week_parity: self.week_parity },
+                "tut" => Type::Tutorial { sec_no: self.section, week_parity: self.week_parity },
                 _ => unreachable!(),
             };
 

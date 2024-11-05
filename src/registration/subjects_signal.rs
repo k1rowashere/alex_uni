@@ -1,3 +1,4 @@
+#![cfg(feature = "ssr")]
 use leptos::*;
 use std::collections::{BTreeSet, HashMap};
 
@@ -27,18 +28,18 @@ pub fn CxtProvider<F>(children: F) -> impl IntoView
 where
     F: Fn(SubjectsSignal) -> Fragment + 'static,
 {
-    let all = Resource::new(|| (), |_| get_registerable_subjects());
-    let selected = Resource::new(|| (), |_| get_subbed_subjects());
+    // let all = Resource::new(|| (), |_| get_registerable_subjects());
+    // let selected = Resource::new(|| (), |_| get_subbed_subjects());
 
-    view! {
-        <TransErrs r1=all r2=selected let:all let:selected>
-        {
-            let signal = SubjectsSignal::new(selected, all);
-            provide_context(signal);
-            children(signal)
-        }
-        </TransErrs>
-    }
+    // view! {
+    //     <TransErrs r1=all r2=selected let:all let:selected>
+    //     {
+    //         let signal = SubjectsSignal::new(selected, all);
+    //         provide_context(signal);
+    //         children(signal)
+    //     }
+    //     </TransErrs>
+    // }
 }
 
 impl SubjectsSignal {
@@ -49,19 +50,10 @@ impl SubjectsSignal {
             .flat_map(|(i, s)| s.choices.iter().zip(std::iter::repeat(i)))
             .map(|(subject, i)| {
                 let Subject { id, lec, tut, lab, .. } = subject.clone();
-                let classes =
-                    [Some(lec), tut, lab].into_iter().flatten().collect();
+                let classes = [Some(lec), tut, lab].into_iter().flatten().collect();
                 let is_selected = selected.contains(&id);
                 let initial_selected = is_selected;
-                (
-                    id,
-                    MapValue {
-                        classes,
-                        is_selected,
-                        initial_selected,
-                        subject_idx: i,
-                    },
-                )
+                (id, MapValue { classes, is_selected, initial_selected, subject_idx: i })
             })
             .collect();
 
@@ -90,47 +82,37 @@ impl SubjectsSignal {
     pub fn save(self) {
         use super::server_fns::register_subjects;
         spawn_local(async move {
-            let selected = self.subject_map.with_untracked(|hm| {
-                hm.iter()
-                    .filter(|(_, v)| v.is_selected)
-                    .map(|(k, _)| *k)
-                    .collect()
-            });
+            // let selected = self
+            //     .subject_map
+            //     .with_untracked(|hm| hm.iter().filter(|(_, v)| v.is_selected).map(|(k, _)| *k).collect());
             // TODO: handle errors (show error msg)
-            let _ = register_subjects(selected).await;
+            // let _ = register_subjects(selected).await;
             // if success
             self.subject_map.update(|hm| {
-                hm.values_mut()
-                    .for_each(|v| v.initial_selected = v.is_selected);
+                hm.values_mut().for_each(|v| v.initial_selected = v.is_selected);
             });
         })
     }
 
     pub fn saved(self) -> Signal<bool> {
         Memo::new(move |_| {
-            self.subject_map.with(|hm| {
-                hm.values().all(|v| v.is_selected == v.initial_selected)
-            })
+            self.subject_map
+                .with(|hm| hm.values().all(|v| v.is_selected == v.initial_selected))
         })
         .into()
     }
 
     pub fn discard(self) {
         self.subject_map.update(|m| {
-            m.values_mut()
-                .for_each(|v| v.is_selected = v.initial_selected);
+            m.values_mut().for_each(|v| v.is_selected = v.initial_selected);
         });
     }
 
     /// returns a signal that emits true if the subject is selected
     pub fn is_selected(self, subject: SubjectId) -> Signal<bool> {
         Memo::new(move |_| {
-            self.subject_map.with(move |hm| {
-                matches!(
-                    hm.get(&subject),
-                    Some(MapValue { is_selected: true, .. })
-                )
-            })
+            self.subject_map
+                .with(move |hm| matches!(hm.get(&subject), Some(MapValue { is_selected: true, .. })))
         })
         .into()
     }
@@ -150,9 +132,8 @@ impl SubjectsSignal {
     }
 
     pub fn is_selected_untracked(self, subject: SubjectId) -> bool {
-        self.subject_map.with_untracked(move |hm| {
-            matches!(hm.get(&subject), Some(MapValue { is_selected: true, .. }))
-        })
+        self.subject_map
+            .with_untracked(move |hm| matches!(hm.get(&subject), Some(MapValue { is_selected: true, .. })))
     }
 
     pub fn select(self, subject: SubjectId) {
@@ -162,12 +143,7 @@ impl SubjectsSignal {
             update!(|subjects, col_map| {
                 let (classes, idx) = match subjects.get_mut(&subject) {
                     Some(MapValue { is_selected: true, .. }) | None => return,
-                    Some(MapValue {
-                        classes,
-                        is_selected,
-                        subject_idx,
-                        ..
-                    }) => {
+                    Some(MapValue { classes, is_selected, subject_idx, .. }) => {
                         *is_selected = true;
                         (classes, *subject_idx)
                     }
@@ -187,9 +163,7 @@ impl SubjectsSignal {
                         .iter()
                         .map(|s| s.id)
                         .filter(|&id| subject != id)
-                        .for_each(|id| {
-                            Self::deselect_helper(id, subjects, col_map)
-                        })
+                        .for_each(|id| Self::deselect_helper(id, subjects, col_map))
                 });
             });
         });
@@ -219,9 +193,7 @@ impl SubjectsSignal {
     pub fn deselect(self, subject: SubjectId) {
         let subjects = self.subject_map;
         let col_map = self.collision_map;
-        update!(|subjects, col_map| {
-            Self::deselect_helper(subject, subjects, col_map)
-        });
+        update!(|subjects, col_map| { Self::deselect_helper(subject, subjects, col_map) });
     }
 
     pub fn toggle(self, subject: SubjectId) {
@@ -237,9 +209,7 @@ impl SubjectsSignal {
             let classes = hm.get(&subject).map(|v| &v.classes)?;
             let class_idx: Vec<_> = classes
                 .iter()
-                .flat_map(|c| {
-                    (c.period.0..c.period.1).map(|i| (c.day as usize, i))
-                })
+                .flat_map(|c| (c.period.0..c.period.1).map(|i| (c.day as usize, i)))
                 .collect();
             Some(class_idx)
         });

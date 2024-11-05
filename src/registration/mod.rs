@@ -1,5 +1,6 @@
+#![cfg(feature = "ssr")]
+
 mod class_card;
-#[cfg(feature = "ssr")]
 pub mod rem_seats_ws;
 mod server_fns;
 mod subjects_signal;
@@ -7,8 +8,8 @@ mod subjects_signal;
 use std::collections::BTreeSet;
 
 use leptos::*;
-use leptos_router::*;
-use leptos_use::{use_websocket, UseWebsocketReturn};
+// use leptos_router::*;
+// use leptos_use::{use_websocket, UseWebsocketReturn};
 use serde::{Deserialize, Serialize};
 
 use crate::class::Class;
@@ -44,8 +45,7 @@ pub struct Subject {
 
 pub type SelectedSubjects = Result<BTreeSet<SubjectId>, ServerFnError>;
 pub type SelectedSubjectsResource = Resource<(), SelectedSubjects>;
-pub type AllSubjectsResource =
-    Resource<(), Result<Vec<SubjectChoices>, ServerFnError>>;
+pub type AllSubjectsResource = Resource<(), Result<Vec<SubjectChoices>, ServerFnError>>;
 type Seats = Signal<Vec<(SubjectId, u32)>>;
 type TabRwSignal = (Memo<usize>, SignalSetter<usize>);
 
@@ -59,24 +59,24 @@ pub fn RegistrationPage() -> impl IntoView {
     // let subjects_signal = SubjectsSignal::new(selected_subjects, all_subjects);
     // provide_context(subjects_signal);
 
-    let tab_idx = {
-        let (get, set) = create_query_signal::<usize>("page");
-        (
-            Memo::new(move |_| get().unwrap_or_default()),
-            SignalSetter::map(move |idx| set(Some(idx))),
-        )
-    };
+    // let tab_idx = {
+    //     let (get, set) = create_query_signal::<usize>("page");
+    //     (
+    //         Memo::new(move |_| get().unwrap_or_default()),
+    //         SignalSetter::map(move |idx| set(Some(idx))),
+    //     )
+    // };
 
-    let rem_seats_ws = {
-        let UseWebsocketReturn { message, .. } = use_websocket("/ws/rem_seats");
-        move || {
-            message()
-                .and_then(|msg| serde_json::from_str(&msg).ok())
-                .unwrap_or_default()
-        }
-    };
+    // let rem_seats_ws = {
+    //     let UseWebsocketReturn { message, .. } = use_websocket("/ws/rem_seats");
+    //     move || {
+    //         message()
+    //             .and_then(|msg| serde_json::from_str(&msg).ok())
+    //             .unwrap_or_default()
+    //     }
+    // };
 
-    provide_context(rem_seats_ws.into_signal() as Seats);
+    // provide_context(rem_seats_ws.into_signal() as Seats);
 
     // TODO: Make scrollable overflow
     //       Hide extra data in a dropdown?
@@ -93,11 +93,11 @@ pub fn RegistrationPage() -> impl IntoView {
                         .map(|c| c.level as usize)
                         .collect();
                     let start_tab = tabs.first().cloned().unwrap_or_default();
-                    view! { <TabSelector tabs start_tab selector=tab_idx/> }
+                    // view! { <TabSelector tabs start_tab selector=tab_idx/> }
             })}
             <div class="rounded-b-lg p-4 bg-secondary shadow-lg">
                 <div class="flex flex-row items-stretch gap-2">
-                    <ClassAccordion curr_level=tab_idx.0 subjects/>
+                    // <ClassAccordion curr_level=tab_idx.0 subjects/>
                     <SideMenu/>
                 </div>
                 // status + action bar
@@ -136,15 +136,12 @@ pub fn RegistrationPage() -> impl IntoView {
 }
 
 #[component]
-fn ClassAccordion(
-    #[prop(into)] curr_level: Signal<usize>,
-    subjects: SubjectsSignal,
-) -> impl IntoView {
+fn ClassAccordion(#[prop(into)] curr_level: Signal<usize>, subjects: SubjectsSignal) -> impl IntoView {
     // TODO: fix start_open
     fn row((_i, s): (usize, SubjectChoices)) -> leptos::View {
         view! {
             <AccordionItem
-                class="[&:has([data-selected])]:border-indigo-300 \
+                class="[&:has([data-selected])]:border-blue-300 \
                     [&:has([data-invalid])]:!border-red-300 \
                     bg-gray-50 dark:bg-slate-900"
                 inner_class="grid px-0.5 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2"
@@ -160,16 +157,16 @@ fn ClassAccordion(
     }
 
     view! {
-        <Accordion>
-            {move || subjects.choices().with_value(|s| {
-                s.iter()
-                    .filter(|c| c.level == curr_level() as u8)
-                    .cloned()
-                    .enumerate()
-                    .map(row)
-                .collect_view()
-            })}
-        </Accordion>
+        // <Accordion>
+        //     {move || subjects.choices().with_value(|s| {
+        //         s.iter()
+        //             .filter(|c| c.level == curr_level() as u8)
+        //             .cloned()
+        //             .enumerate()
+        //             .map(row)
+        //         .collect_view()
+        //     })}
+        // </Accordion>
     }
 }
 

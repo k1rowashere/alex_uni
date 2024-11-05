@@ -3,10 +3,7 @@ use std::fmt::Write;
 
 /// Wrapper around `Suspense` and `ErrorBoundary`
 #[component(transparent)]
-pub fn SusErr<S, T, C, IV>(
-    children: C,
-    resource: Resource<S, Result<T, ServerFnError>>,
-) -> impl IntoView
+pub fn SusErr<S, T, C, IV>(children: C, resource: Resource<S, Result<T, ServerFnError>>) -> impl IntoView
 where
     S: 'static + Clone,
     T: 'static,
@@ -32,10 +29,7 @@ where
 
 /// Wrapper around `Transition` and `ErrorBoundary`
 #[component(transparent)]
-pub fn TransErr<S, T, C, IV>(
-    children: C,
-    resource: Resource<S, Result<T, ServerFnError>>,
-) -> impl IntoView
+pub fn TransErr<S, T, C, IV>(children: C, resource: Resource<S, Result<T, ServerFnError>>) -> impl IntoView
 where
     S: 'static + Clone,
     T: 'static,

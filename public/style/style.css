@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+@import "./timetable.css";
+@import "./animations.css";
+@import "./sidebar.css";
+@import "./input_label.css";
+
+@layer utilities {
+  .discrete {
+    transition-behavior: allow-discrete;
+  }
+}
+
+body {
+  font-family: Helvetica, Arial, sans-serif;
+  scrollbar-gutter: stable both-edges;
+}
+
+path {
+  @apply transition-all;
+}
+
+input,
+select,
+textarea {
+  background: none;
+}
+
+button {
+  cursor: pointer;
+}
+
+a:hover {
+  text-decoration-line: underline;
+}
+
+.htmx-indicator {
+  display: none;
+
+  &.htmx-request,
+  & .htmx-request {
+    display: block;
+  }
+}

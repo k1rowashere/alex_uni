@@ -3,113 +3,38 @@ name = "uni_web"
 version = "0.1.0"
 edition = "2021"
 
-[lib]
-crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-actix-web = { version = "4", optional = true, features = ["macros"] }
-actix-files = { version = "0.6", optional = true }
-http = { version = "0.2", optional = true }
-leptos_actix = { version = "0.5.2", optional = true }
-leptos = { version = "0.5.2", features = ["nightly"] }
-leptos_meta = { version = "0.5.2", features = ["nightly"] }
-leptos_router = { version = "0.5.2", features = ["nightly"] }
-console_error_panic_hook = "0.1"
+actix-web = { version = "4", features = ["macros"] }
+actix-ws = { version = "0.3" }
+actix-broker = "0.4"
+actix-files = "0.6"
+actix-session = { version = "0.10", features = ["cookie-session"] }
+actix-identity = { version = "0.8" }
+base64 = { version = "0.22" }
+
+anyhow = "1"
 cfg-if = "1"
-wasm-bindgen = "=0.2.88"
-web-sys = "0.3.64"
-js-sys = "0.3.64"
-derive_builder = "0.12.0"
-bcrypt = { version = "0.15.0", optional = true }
-jsonwebtoken = { version = "9.0", optional = true }
-chrono = { version = "0.4.28", optional = true, features = ["serde"] }
-strum_macros = "0.25.2"
-strum = "0.25.0"
-rand = "0.8.5"
-sqlx = { version = "0.7.1", optional = true, features = [
-  "runtime-tokio",
-  "json",
-  "tls-rustls",
-  "sqlite",
-  "macros",
-  "chrono",
+
+derive_builder = "0.20.2"
+bcrypt = "0.15.1"
+chrono = { version = "0.4.38", features = ["serde"] }
+strum_macros = "0.26.4"
+strum = "0.26.3"
+sqlx = { version = "0.8.2", features = [
+    "runtime-tokio",
+    "json",
+    "tls-rustls",
+    "sqlite",
+    "macros",
+    "chrono",
 ] }
 serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0.107"
-cached = { version = "0.46.0", optional = true, features = ["async"] }
-futures = { version = "0.3.28", optional = true }
-dotenvy = "0.15.7"
-leptos-use = { version = "0.8.1", features = ["storage"] }
-actix-web-actors = { version = "4.2.0", optional = true }
-actix = { version = "0.13.1", optional = true }
-actix-broker = { version = "0.4.3", optional = true }
-uuid = { version = "1.4.1", features = ["v4"] }
-
-[features]
-default = ["ssr"]
-# default = ["hydrate"]
-hydrate = [
-  "leptos/hydrate",
-  "leptos_meta/hydrate",
-  "leptos_router/hydrate",
-  "uuid/js",
-]
-ssr = [
-  "leptos-use/ssr",
-  "leptos/ssr",
-  "leptos_meta/ssr",
-  "leptos_router/ssr",
-  "dep:sqlx",
-  "dep:actix-files",
-  "dep:actix-web",
-  "dep:leptos_actix",
-  "dep:bcrypt",
-  "dep:jsonwebtoken",
-  "dep:chrono",
-  "dep:cached",
-  "dep:futures",
-  "dep:actix",
-  "dep:actix-web-actors",
-  "dep:actix-broker",
-]
-
-[profile.wasm-release]
-inherits = "release"
-opt-level = 'z'
-lto = true
-codegen-units = 1
-panic = "abort"
-
-[profile.wasm-dev]
-inherits = "dev"
-codegen-units = 1
-
-[profile.server-dev]
-inherits = "dev"
-codegen-units = 1
-
-[package.metadata.leptos]
-output-name = "uni_web"
-site-root = "target/site"
-site-pkg-dir = "pkg"
-style-file = "style/main.scss"
-tailwind-input-file = "style/tailwind.css"
-tailwind-config-file = "./tailwind.config.js"
-assets-dir = "assets"
-site-addr = "127.0.0.1:3000"
-reload-port = 3001
-end2end-cmd = "npx playwright test"
-end2end-dir = "end2end"
-browserquery = "defaults"
-
-watch = false
-env = "DEV"
-
-bin-features = ["ssr"]
-bin-default-features = false
-bin-profile-dev = "server-dev"
-
-lib-features = ["hydrate"]
-lib-default-features = false
-lib-profile-release = "wasm-release"
-lib-profile-dev = "wasm-dev"
+serde_json = "1.0.128"
+cached = { version = "0.53.1", features = ["async"] }
+futures = "0.3.31"
+dotenvy = { version = "0.15.7" }
+uuid = { version = "1.11.0", features = ["v4"] }
+tera = "1.20.0"
+icondata = { version = "0.4.0", features = ["serde"] }
+percent-encoding = "2.3.1"
