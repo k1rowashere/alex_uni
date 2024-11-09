@@ -1,0 +1,82 @@
+{% extends "partial/html_shell.html" %}
+{% import "partial/components.html" as cmp %}
+
+{% block title %}Class Schedule{% endblock title %}
+
+{% block main %}
+{% set st_times = ["08:30 AM", "10:20 AM", "12:10 PM", "02:00 PM", "03:50 PM", "05:40 PM" ] %}
+{% set en_times = [ "10:10 AM", "12:00 PM", "01:50 PM", "03:40 PM", "05:30 PM", "07:20 PM" ] %}
+{% set days = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu"] %}
+
+
+<div
+  class="3xl:max-w-[170ch] 3xl:mx-auto relative m-10 grid min-w-4xl grid-cols-13 grid-rows-[min-content_repeat(12,minmax(0,1fr))] gap-0.5 rounded-lg">
+  <div></div>
+  {% for start in st_times %}
+  <div class="col-span-2 mb-1 flex flex-col items-center rounded-t-lg bg-white p-2 font-bold">
+    {% if show_idx %} {{ loop.index }}{% endif %}
+    {% if show_time %} <span class="inline-flex text-xs">{{ start ~ ` ⟶ ` ~ en_times[loop.index0] }}</span> {% endif %}
+  </div>
+  {% endfor %}
+
+  {% for class in grid %}
+  {#<div class="col-start-1 mr-1 content-center rounded-l-lg bg-white p-2 font-bold"> {{ days[loop.index0] }} </div>#}
+  {#{% for cell in row %}#}
+  {#
+  {% if cell == "Empty" %}
+  <div class="bg-slate-50"> </div>
+  {% elif cell == "Join" %}
+  {% else %}
+  #}
+
+  {#{% set class = cell.Some %}#}
+
+  {% if class.ctype.type == "Lab" %}
+  {% set bg_color = "bg-blue-200 ring-blue-400" %}
+  {% elif class.ctype.type == "Lecture" %}
+  {% set bg_color = "bg-red-200 ring-red-400" %}
+  {% elif class.ctype.type == "Tutorial" %}
+  {% set bg_color = "bg-slate-300 ring-slate-400" %}
+  {% endif %}
+
+  {% set row_span = 2 %}
+  {% set row_start = 0 %}
+  {% set line_clamp = "line-clamp-2" %}
+  {% set height = "" %}
+
+  {% set day = class.day | day_to_num %}
+  {% set row = (day + 1) * 2 %}
+
+  {% if class.ctype.type == "Lab" or class.ctype.type == "Tutorial" and class.ctype.type != "Both" %}
+  {% set row_span = 1 %}
+  {% set line_clamp = "line-clamp-1" %}
+  {% set height = "h-6" %}
+
+  {% if class.ctype.week_parity != "Even" %}
+  {% set row = row + 1%}
+  {% endif %}
+
+  {% endif %}
+
+  <div class="flex flex-col overflow-hidden rounded px-2 p-1 ring-1 shadow-lg ring-inset {{ bg_color }}"
+    style="grid-column: {{ class.period.0 + 2 }} / {{ class.period.1 + 3 }}; grid-row: {{ row }} / span {{ row_span }} ;">
+    <span class="text-xs">
+      [{{ class.ctype.type }}]
+      <span class="group-[.hidecode]:hidden">{{ class.code }}</span>
+    </span>
+    <span class="{{ line_clamp }} overflow-hidden font-bold break-words text-ellipsis">
+      {{ class.name }}
+    </span>
+    {% if class.ctype.type == "Lecture" %}
+    <span class="block overflow-hidden text-xs font-thin text-ellipsis whitespace-nowrap group-[.hideprof]:hidden">
+      {{ class.ctype.prof }}
+    </span>
+    {% endif %}
+    <span class="block text-xs group-[.hideloc]:hidden">{{ class.location | fmt_location }}</span>
+  </div>
+  {#{% endfor %}#}
+  {% endfor %}
+  {#{% endif %}#}
+</div>
+
+{% endblock main %}
