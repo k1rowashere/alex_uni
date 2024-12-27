@@ -1,0 +1,21 @@
+{% macro icon(icon, class="", nomargin=false) %}
+  {% set icon_data = icon | svg_icon %}
+  {# the margin is to align the icon with text #}
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    class="{% if not nomargin %}mb-[0.25em]{% endif %} {{ class }}"
+    viewBox="{{ icon_data.view_box | default(value=`0 0 24 24`) }}"
+    fill="{{ icon_data.fill | default(value=`currentColor`) }}"
+    x="{{ icon_data.x | default(value=`0`) }}"
+    y="{{ icon_data.y | default(value=`0`) }}"
+    width="1em"
+    height="1em"
+    stroke-linecap="{{ icon_data.stroke_linecap | default(value=`round`) }}"
+    stroke-linejoin="{{ icon_data.stroke_linejoin | default(value=`round`) }}"
+    stroke-width="{{ icon_data.stroke_width | default(value=`0`) }}"
+    stroke="{{ icon_data.stroke | default(value=`currentColor`) }}"
+    style="{{ icon_data.style | default(value=``) }}"
+  >
+    {{ icon_data.data | safe }}
+  </svg>
+{% endmacro icon %}

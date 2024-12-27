@@ -1,0 +1,9 @@
+{% macro link(name, url, icon="", icon_class="") %}
+  <a
+    href="{{ url }}"
+    class="flex items-center gap-4 rounded p-2 transition hover:bg-slate-200 hover:font-semibold aria-[current]:bg-slate-200 aria-[current]:font-semibold"
+  >
+    {% if icon != "" %}{{ ico::icon(icon=icon, class=icon_class) }}{% endif %}
+    {{ name }}
+  </a>
+{% endmacro link %}

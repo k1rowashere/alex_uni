@@ -1,0 +1,12 @@
+plugins:
+  [
+    "prettier-plugin-sql",
+    "prettier-plugin-jinja-template",
+    "prettier-plugin-tailwindcss",
+  ]
+overrides:
+  - files: "*.html"
+    options:
+      parser: "jinja-template"
+      printWidth: 120
+language: postgresql

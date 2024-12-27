@@ -1,44 +1,90 @@
 @import "tailwindcss";
 
-@import "./timetable.css";
-@import "./animations.css";
 @import "./sidebar.css";
-@import "./input_label.css";
 
-@layer utilities {
-  .discrete {
-    transition-behavior: allow-discrete;
+@layer base {
+  .htmx-indicator {
+    display: none;
+
+    &.htmx-request,
+    & .htmx-request {
+      display: block;
+    }
+  }
+  *:focus-visible {
+    @apply ring-2 ring-blue-300 outline-none;
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select {
+    @apply rounded border border-slate-300 p-2 shadow ring-blue-300 transition-all focus:border-blue-700 focus:ring-2;
+  }
+
+  body {
+    font-family: Helvetica, Arial, sans-serif;
+    scrollbar-gutter: stable both-edges;
+  }
+
+  button {
+    cursor: pointer;
   }
 }
 
-body {
-  font-family: Helvetica, Arial, sans-serif;
-  scrollbar-gutter: stable both-edges;
+@layer utilities {
+  .stack {
+    display: grid;
+    grid-template-areas: "a";
+    & > * {
+      grid-area: a;
+    }
+  }
 }
 
-path {
-  @apply transition-all;
+input:user-invalid,
+select:user-invalid,
+form.invalid *:is(input, select) {
+  @apply border-red-500;
+  &:focus {
+    @apply ring-red-300;
+  }
+  & ~ .input_label {
+    @apply text-red-500;
+  }
 }
 
-input,
-select,
-textarea {
-  background: none;
+input:focus ~ .input_label,
+input:not(:placeholder-shown) ~ .input_label,
+select:not(:has(option:checked[hidden])) ~ .input_label {
+  @apply -translate-y-6 scale-75 bg-white;
 }
 
-button {
-  cursor: pointer;
+@keyframes scale {
+  0% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(0.7);
+  }
+  100% {
+    transform: scaleY(1);
+  }
 }
 
-a:hover {
-  text-decoration-line: underline;
-}
-
-.htmx-indicator {
-  display: none;
-
-  &.htmx-request,
-  & .htmx-request {
-    display: block;
+@keyframes shake {
+  0% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  50% {
+    transform: translateX(0);
+  }
+  75% {
+    transform: translateX(5px);
+  }
+  100% {
+    transform: translateX(0);
   }
 }

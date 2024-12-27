@@ -9,11 +9,11 @@ use serde::{Deserialize, Serialize};
 pub struct RemSeatsMsg(pub Vec<(super::SubjectId, u32)>);
 
 struct RemSeatsWs {
-    db_pool: sqlx::SqlitePool,
+    db_pool: Db,
 }
 
 impl RemSeatsWs {
-    pub fn new(db_pool: sqlx::SqlitePool) -> Self {
+    pub fn new(db_pool: Db) -> Self {
         Self { db_pool }
     }
 }
@@ -57,7 +57,7 @@ impl RemSeatsWs {
 //
 // pub async fn rem_seats_ws(
 //     req: HttpRequest,
-//     pool: web::Data<sqlx::SqlitePool>,
+//     pool: web::Data<Db>,
 //     stream: web::Payload,
 // ) -> Result<HttpResponse, Error> {
 //     // TODO: check for auth

@@ -1,0 +1,175 @@
+{% extends "shell.html" %}
+{% block title -%}
+  Grades
+{% endblock title -%}
+{% block main %}
+  <style>
+    @property --gpa {
+      syntax: "<number>";
+      initial-value: 0;
+      inherits: true;
+    }
+
+    #gpa::before,
+    #gpa_calc_display::after {
+      counter-reset: num round(down, var(--gpa)) dec round(down, rem(var(--gpa) * 100, 100));
+      content: counter(num) "." counter(dec, decimal-leading-zero);
+    }
+  </style>
+  <div class="relative m-10 rounded-lg border-1 border-slate-400 bg-white p-4">
+    <h1 class="absolute -top-3 left-4 bg-gradient-to-b from-slate-100 to-white px-1 text-lg text-slate-500">
+      Overview
+    </h1>
+    <div class="flex items-center gap-5">
+      <div class="stack items-center text-center [--gpa:3.88]">
+        <svg width="180" xmlns="http://www.w3.org/2000/svg" viewBox="-5.155 -25.4 30.37 26.5">
+          <linearGradient id="gpa_grad" x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0%" stop-color="var(--color-blue-600)" />
+            <stop offset="100%" stop-color="var(--color-sky-400)" />
+          </linearGradient>
+          <path
+            class="stroke-slate-200"
+            stroke-width="2"
+            stroke-linecap="round"
+            fill="none"
+            d="M0 0C-5.54-5.54-5.54-14.51 0-20.06S14.52-25.6 20.06-20.06 25.6-5.54 20.06 0"
+          />
+          <path
+            class="transition-[--gpa] duration-[3s] starting:[--gpa:0]"
+            stroke="url(#gpa_grad)"
+            stroke-width="2"
+            stroke-dashoffset="calc(66.85657501220703px * (1 - var(--gpa) / 4))"
+            stroke-dasharray="66.85657501220703"
+            stroke-linecap="round"
+            fill="none"
+            d="M0 0C-5.54-5.54-5.54-14.51 0-20.06S14.52-25.6 20.06-20.06 25.6-5.54 20.06 0"
+          />
+        </svg>
+        <div
+          class="mt-7 before:block before:text-4xl before:font-bold before:transition-[--gpa] before:duration-[3s] before:starting:[--gpa:0]"
+          id="gpa"
+        >
+          CGPA
+        </div>
+      </div>
+      {% raw %}
+        <div class="flex flex-col">
+          <span>{{ student.name }}</span>
+          <span>{{ studen.program }}</span>
+          <span>Level {{ student.level }}</span>
+          <span>Credit Hours Earned: {{ student.credit_hrs }}</span>
+        </div>
+      {% endraw %}
+      <button
+        onclick="document.getElementById('calc').showModal()"
+        class="hover:color-gray-700 rounded-full p-2 text-3xl transition hover:bg-slate-200"
+      >
+        {{ ico::icon(icon="BsCalculator", nomargin=true) }}
+      </button>
+    </div>
+  </div>
+  <div class="relative m-10 rounded-lg border-1 border-slate-400 bg-white p-4">
+    <h1 class="absolute -top-3 left-4 bg-gradient-to-b from-slate-100 to-white px-1 text-lg text-slate-500">
+      This Term's Grades
+    </h1>
+    <div class="grid grid-cols-5">
+      <div class="col-span-full grid grid-cols-subgrid">
+        <div>#</div>
+        <div>Code</div>
+        <div>Course Name</div>
+        <div>Cr Hrs</div>
+        <div>Grade</div>
+      </div>
+    </div>
+  </div>
+  <div class="relative m-10 rounded-lg border-1 border-slate-400 bg-white p-4">
+    <h1 class="absolute -top-3 left-4 bg-gradient-to-b from-slate-100 to-white px-1 text-lg text-slate-500">
+      Previous Terms Grades
+    </h1>
+    <div class="grid grid-cols-5">
+      <div class="col-span-full grid grid-cols-subgrid">
+        <div>#</div>
+        <div>Code</div>
+        <div>Course Name</div>
+        <div>Cr Hrs</div>
+        <div>Grade</div>
+      </div>
+    </div>
+  </div>
+  <dialog class="m-5 h-[40dvh] w-full max-w-prose rounded-lg border border-slate-400 bg-white p-4 sm:mx-auto" id="calc">
+    <div class="flex h-full flex-col gap-4">
+      <div class="flex justify-between">
+        <h1 class="text-xl">GPA Calculator</h1>
+        <button
+          type="button"
+          onclick="document.getElementById('calc').close()"
+          class="hover:color-gray-700 rounded-full p-1 text-xl transition hover:bg-slate-200"
+        >
+          {{ ico::icon(icon="FiX", nomargin=true) }}
+        </button>
+      </div>
+      <form
+        hx-boost="false"
+        class="mb-auto grid grid-cols-[min-content_3fr_2fr_1fr] gap-2 gap-y-3 overflow-y-scroll px-0.5 py-2"
+        id="gpa_calc_form"
+        onchange="this.requestSubmit()"
+        onclick="this.requestSubmit()"
+        onsubmit="return calculate_gpa(event)"
+      >
+        <ul class="contents">
+          <span
+            class="col-span-full h-10 justify-self-center text-slate-500"
+            hx-get="/parts/calc_item"
+            hx-swap="outerHTML"
+            hx-trigger="revealed"
+            >{% include "spinner.svg" %}</span
+          >
+          <span class="col-span-full justify-self-center text-slate-500 not-only:hidden">No courses added</span>
+        </ul>
+      </form>
+      <button
+        type="button"
+        hx-target="#gpa_calc_form>ul"
+        hx-get="/parts/calc_item"
+        hx-swap="beforeend"
+        class="flex w-fit items-center gap-2 rounded text-green-700 ring-green-300 hover:text-green-400"
+      >
+        {{ ico::icon(icon="FiPlus") }}Add Course
+      </button>
+      <div
+        id="gpa_calc_display"
+        class="rounded border border-slate-300 p-2 text-xl transition-[--gpa] duration-300 starting:[--gpa:0]"
+      >
+        =&nbsp;
+      </div>
+    </div>
+  </dialog>
+  <script>
+    // TODO: Replace this with a proper serverside implementation
+    function calculate_gpa(event) {
+      event.preventDefault();
+      const formData = new FormData(event.target);
+      let grades = [];
+      let credits = [];
+      formData.forEach((value, key) => {
+        if (key === "grade") {
+          grades.push(parseFloat(value));
+        } else if (key === "credit") {
+          credits.push(parseInt(value) || 0);
+        }
+      });
+
+      let gpa = 0;
+      let sum = 0;
+      for (let i = 0; i < grades.length; i++) {
+        if (isNaN(grades[i])) continue;
+        gpa += grades[i] * credits[i];
+        sum += credits[i];
+      }
+
+      gpa = sum === 0 ? 0 : gpa / sum;
+      document.getElementById("gpa_calc_display").style.setProperty("--gpa", gpa);
+      return false;
+    }
+  </script>
+{% endblock main %}

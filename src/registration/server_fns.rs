@@ -4,12 +4,11 @@ use std::collections::BTreeSet;
 use super::{SubjectChoices, SubjectId};
 use actix_web::web::Data;
 use leptos::*;
-use sqlx::SqlitePool;
 
 use super::Subject;
 
 // #[cached::proc_macro::cached(time = 1000, time_refresh, result)]
-pub async fn subject_by_id(s: SubjectId, pool: Data<SqlitePool>) -> sqlx::Result<Option<Subject>> {
+pub async fn subject_by_id(s: SubjectId, pool: Data<Db>) -> sqlx::Result<Option<Subject>> {
     use crate::class::*;
     let pool = pool.get_ref();
 
@@ -76,13 +75,20 @@ pub async fn subject_by_id(s: SubjectId, pool: Data<SqlitePool>) -> sqlx::Result
     assert!(tut.is_none() || tut.as_ref().unwrap().ctype.is_tutorial());
     assert!(lab.is_none() || lab.as_ref().unwrap().ctype.is_lab());
 
-    Ok(Some(Subject { id: s, max_seats, group, lec, tut, lab }))
+    Ok(Some(Subject {
+        id: s,
+        max_seats,
+        group,
+        lec,
+        tut,
+        lab,
+    }))
 }
 
 /// Returns the remaining seats for the given subjects
 /// if `None` given, returns the remaining seats for all subjects
 // #[cfg(feature = "ssr")]
-// pub async fn get_rem_seats(subjects: &[SubjectId], pool: sqlx::SqlitePool) -> Result<RemSeatsMsg, ServerFnError> {
+// pub async fn get_rem_seats(subjects: &[SubjectId], pool: Db) -> Result<RemSeatsMsg, ServerFnError> {
 //     let query = if !subjects.is_empty() {
 //         let query_str = format!(
 //             r#"
@@ -119,7 +125,10 @@ pub async fn subject_by_id(s: SubjectId, pool: Data<SqlitePool>) -> sqlx::Result
 //     Ok(RemSeatsMsg(query?))
 // }
 
-pub async fn register_subjects(new: BTreeSet<SubjectId>, pool: Data<SqlitePool>) -> Result<(), ServerFnError> {
+pub async fn register_subjects(
+    new: BTreeSet<SubjectId>,
+    pool: Data<Db>,
+) -> Result<(), ServerFnError> {
     // TODO: Collision detection
     //       Deduping
     //       (preferably on DB):
@@ -199,7 +208,7 @@ pub async fn register_subjects(new: BTreeSet<SubjectId>, pool: Data<SqlitePool>)
     Ok(())
 }
 
-pub async fn get_subbed_subjects(pool: Data<SqlitePool>) -> Result<BTreeSet<SubjectId>, ServerFnError> {
+pub async fn get_subbed_subjects(pool: Data<Db>) -> Result<BTreeSet<SubjectId>, ServerFnError> {
     // use crate::login::user_id_from_jwt;
 
     let res = expect_context::<leptos_actix::ResponseOptions>();
@@ -231,7 +240,9 @@ pub async fn get_subbed_subjects(pool: Data<SqlitePool>) -> Result<BTreeSet<Subj
     Ok(BTreeSet::from_iter(query))
 }
 
-pub async fn get_registerable_subjects(pool: Data<SqlitePool>) -> Result<Vec<SubjectChoices>, ServerFnError> {
+pub async fn get_registerable_subjects(
+    pool: Data<Db>,
+) -> Result<Vec<SubjectChoices>, ServerFnError> {
     use futures::{stream, StreamExt, TryStreamExt};
 
     let req = expect_context::<actix_web::HttpRequest>();
@@ -277,7 +288,12 @@ pub async fn get_registerable_subjects(pool: Data<SqlitePool>) -> Result<Vec<Sub
                 .try_filter_map(|s| async move { Ok(s) })
                 .try_collect()
                 .await?;
-            Ok(SubjectChoices { level: s.level, name: s.name, code: s.code, choices }) as Result<_, sqlx::Error>
+            Ok(SubjectChoices {
+                level: s.level,
+                name: s.name,
+                code: s.code,
+                choices,
+            }) as Result<_, sqlx::Error>
         })
         .buffer_unordered(4)
         .try_collect()

@@ -1,0 +1,33 @@
+{% import "components/icon.html" as ico %}
+{% macro radio_selector(icons="", texts, name) %}
+  {% set n = texts|length %}
+  <fieldset class="inline-flex w-full items-center justify-between" onchange="animate_switch(event)">
+    <legend class="contents">{{ name }}</legend>
+    <div
+      class="relative grid overflow-hidden rounded-lg bg-white font-medium text-gray-800 ring shadow-sm ring-gray-200"
+      role="group"
+      style="grid-template-columns: repeat({{ n }}, 1fr)"
+    >
+      {% for text in texts %}
+        {% if loop.first %}
+          {% set class2 = ` rounded-l-lg border-r` %}
+        {% elif loop.last %}
+          {% set class2 = ` rounded-r-lg border-l` %}
+        {% else %}
+          {% set class2 = `border-x` %}
+        {% endif %}
+        <label
+          class="{{ class2 }} z-10 inline-flex h-8 items-center gap-2 border-gray-200 px-4 py-2 text-sm transition hover:bg-slate-200 hover:text-blue-700 has-checked:text-white has-checked:hover:bg-transparent"
+        >
+          <input type="radio" name="{{ name | lower }}" value="{{ text }}" class="absolute opacity-0" />
+          {% if icons %}{{ ico::icon(icon=icons[loop.index0], nomargin=true) }}{% endif %}
+          <span {% if icons %}class="max-[400px]:hidden"{% endif %}>{{ text }}</span>
+        </label>
+      {% endfor %}
+      <div
+        class="bk absolute h-full translate-x-[var(--move-x)] scale-y-100 bg-blue-700 transition"
+        style="width: calc(100%/{{ n }})"
+      ></div>
+    </div>
+  </fieldset>
+{% endmacro radio_selector %}

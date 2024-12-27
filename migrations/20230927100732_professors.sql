@@ -1,6 +1,0 @@
-CREATE TABLE IF NOT EXISTS
-  professors (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    -- subjects BLOB,
-    name TEXT NOT NULL
-  ) STRICT;

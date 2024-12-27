@@ -1,0 +1,108 @@
+{% import "components/icon.html" as ico %}
+{% import "components/link.html" as ln %}
+{% import "components/radio_selector.html" as rs %}
+<!doctype html>
+<html lang="en" class="bg-slate-100">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/style/style.css" />
+    <script src="/assets/js/htmx.min.js"></script>
+    <script defer src="/assets/js/main.js"></script>
+    {% if get_env(name="ENV", default="") == "DEV" -%}
+      <script defer src="/assets/js/hotreload.js"></script>
+    {% endif -%}
+    <title>{%- block title %}{%- endblock title %} - Alexandria University</title>
+    {%- block head %}
+    {%- endblock head %}
+  </head>
+  <body hx-ext="multi-swap" hx-boost="true" class="text-gray-900">
+    {% block body -%}
+      <nav
+        id="navbar"
+        class="sticky top-0 z-40 flex h-16 justify-between gap-4 rounded-b bg-white/70 px-8 py-3 shadow backdrop-blur xl:px-14"
+      >
+        <div class="flex h-full gap-4">
+          <button
+            type="menu"
+            popovertarget="sidebar"
+            popovertargetaction="show"
+            class="hover:color-gray-700 rounded-full p-1 text-3xl transition hover:bg-slate-200"
+          >
+            {{ ico::icon(icon="FiMenu") }}
+          </button>
+          <a href="/" class="h-full justify-self-start rounded-lg hover:opacity-80">
+            <img alt="Alexandria University logo" class="h-full" src="/assets/alexu_logo_ltr.svg" />
+          </a>
+        </div>
+        <button popovertarget="profile_menu" class="aspect-square h-full">
+          <img class="rounded-full hover:opacity-80" src="/api/profile_icon" />
+        </button>
+      </nav>
+      <main class="{% block mainclass %}{% endblock mainclass %} overflow-x-scroll">
+        {% block main -%}
+        {% endblock main -%}
+      </main>
+      <dialog
+        popover
+        hx-select="main"
+        hx-target="main"
+        hx-swap="outerHTML"
+        aria-modal
+        id="sidebar"
+        class="z-50 h-dvh w-full max-w-96 rounded-r-xl px-8 shadow-xl transition-all delay-75 duration-200 backdrop:transition-all backdrop:duration-200"
+        onbeforetoggle="on_sidebar_toggle(event, 'left')"
+        onclick="if (event.target.tagName === 'A' && event.target.href) sidebar.hidePopover();"
+      >
+        <div class="flex h-16 gap-4 py-3 xl:ml-6">
+          <button
+            popovertarget="sidebar"
+            popovertargetaction="hide"
+            class="hover:color-gray-700 rounded-full p-1 text-3xl transition hover:bg-slate-200"
+          >
+            {{ ico::icon(icon="FiX") }}
+          </button>
+          <a href="/" class="h-full rounded hover:opacity-80">
+            <img alt="Alexandria University logo" class="h-full" src="/assets/alexu_logo_ltr.svg" />
+          </a>
+        </div>
+        <nav id="links" class="mt-8 flex flex-col gap-1 text-lg">
+          {{ ln::link(url=`/`, name=`Home`, icon=`BiHomeAlt2Regular`) }}
+          {{ ln::link(url=`/registration`, name=`Course Registration`, icon=`LuPenSquare`) }}
+          {{ ln::link(url=`/schedule/classes`, name=`Classes`, icon=`TbCalendarTime`) }}
+          {{ ln::link(url=`/grades`, name=`Grades`, icon=`BiMedalRegular`) }}
+        </nav>
+      </dialog>
+      <dialog
+        popover
+        id="profile_menu"
+        class="right-0 left-auto z-50 h-dvh w-full max-w-96 rounded-l-xl px-8 shadow-xl transition-all delay-75 duration-200 backdrop:transition-all backdrop:duration-200"
+        onbeforetoggle="on_sidebar_toggle(event, 'right')"
+      >
+        <div class="flex flex-col gap-4">
+          <button
+            popovertarget="profile_menu"
+            popovertargetaction="hide"
+            class="hover:color-gray-700 mt-3 ml-auto h-10 rounded-full p-1 text-3xl transition hover:bg-slate-200 xl:mr-6"
+          >
+            {{ ico::icon(icon="FiX") }}
+          </button>
+          <div class="grid grid-cols-[1fr_2fr] grid-rows-4 justify-items-start gap-x-3">
+            <div class="row-span-full aspect-square w-24 p-2 pb-0">
+              <img class="rounded-full" src="/api/profile_icon" />
+            </div>
+            <span></span>
+            <p class="max-w-full overflow-hidden text-sm font-bold text-ellipsis whitespace-nowrap">{{ user.name }}</p>
+            <span class="flex content-center text-center text-sm text-gray-500">
+              {{ ico::icon(icon="BiHashRegular") }} {{ user.id }}
+            </span>
+            <span class="flex gap-2 text-sm text-gray-500">TEMP PROGRAM</span>
+          </div>
+          <div class="peer w-3/4 self-center border-b border-gray-200"></div>
+          {{ rs::radio_selector(texts=[`Light`, `Auto`, `Dark`], icons=[`BsSun`, `CgDarkMode`, `BiMoonRegular`], name=`Theme`) }}
+          {{ rs::radio_selector(texts=[`English`, `Arabic`], name=`Language`) }}
+        </div>
+      </dialog>
+    {% endblock body -%}
+  </body>
+</html>

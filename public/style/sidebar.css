@@ -1,41 +1,33 @@
 #sidebar {
-  transform: translateX(-100%);
+  --translate-start: -100%;
+}
+#profile_menu {
+  --translate-start: 200%;
+}
+
+#sidebar,
+#profile_menu {
+  transform: translateX(var(--translate-start));
+  transition-behavior: allow-discrete;
 
   &::backdrop {
-    background-color: transparent;
+    background-color: #00000000;
+    transition-behavior: allow-discrete;
   }
 
   &:popover-open {
     transform: translateX(0);
 
     &::backdrop {
-      background-color: rgb(0 0 0 / 25%);
+      background-color: rgba(0, 0, 0, calc(var(--backdrop-opacity, 1) * 0.5));
     }
 
     @starting-style {
       & {
-        transform: translateX(-100%);
+        transform: translateX(var(--translate-start));
       }
       &::backdrop {
-        background-color: transparent;
-      }
-    }
-  }
-}
-
-#profile_menu {
-  opacity: 0;
-  scale: 75%;
-  transform-origin: top right;
-
-  &:popover-open {
-    opacity: 1;
-    scale: 100%;
-
-    @starting-style {
-      & {
-        opacity: 0;
-        scale: 75%;
+        background-color: #00000000;
       }
     }
   }

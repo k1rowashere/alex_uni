@@ -5,36 +5,30 @@ edition = "2021"
 
 
 [dependencies]
-actix-web = { version = "4", features = ["macros"] }
-actix-ws = { version = "0.3" }
+actix-web = "4.9" 
+actix-ws = "0.3" 
 actix-broker = "0.4"
 actix-files = "0.6"
 actix-session = { version = "0.10", features = ["cookie-session"] }
 actix-identity = { version = "0.8" }
+
 base64 = { version = "0.22" }
 
 anyhow = "1"
 cfg-if = "1"
 
 derive_builder = "0.20.2"
-bcrypt = "0.15.1"
+bcrypt = "0.16.0"
 chrono = { version = "0.4.38", features = ["serde"] }
 strum_macros = "0.26.4"
 strum = "0.26.3"
-sqlx = { version = "0.8.2", features = [
-    "runtime-tokio",
-    "json",
-    "tls-rustls",
-    "sqlite",
-    "macros",
-    "chrono",
-] }
+sqlx = { version = "0.8.2", features = ["postgres", "runtime-tokio", "chrono", "bigdecimal"]}
 serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0.128"
-cached = { version = "0.53.1", features = ["async"] }
+serde_json = "1.0.133"
+cached = { version = "0.54.0", features = ["async"] }
 futures = "0.3.31"
 dotenvy = { version = "0.15.7" }
 uuid = { version = "1.11.0", features = ["v4"] }
 tera = "1.20.0"
-icondata = { version = "0.4.0", features = ["serde"] }
+icondata = { version = "0.5.0", features = ["serde"] }
 percent-encoding = "2.3.1"

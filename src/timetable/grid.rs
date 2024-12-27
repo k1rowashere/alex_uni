@@ -10,10 +10,10 @@ enum TimetableCell {
     Some(Class),
 }
 
-// type GridSignal = (
-//     [[ReadSignal<TimetableCell>; 12]; 6],
-//     [[WriteSignal<TimetableCell>; 12]; 6],
-// );
+type GridSignal = (
+    [[ReadSignal<TimetableCell>; 12]; 6],
+    [[WriteSignal<TimetableCell>; 12]; 6],
+);
 type GridSignal = [[RwSignal<TimetableCell>; 12]; 6];
 
 fn create_grid_signal(classes: Vec<Class>) -> GridSignal {
@@ -64,12 +64,15 @@ pub fn TimetableGrid(
         curr
     });
 
-    let head = PERIOD_START_TIME.into_iter().zip(PERIOD_END_TIME).enumerate();
+    let head = PERIOD_START_TIME
+        .into_iter()
+        .zip(PERIOD_END_TIME)
+        .enumerate();
 
     view! {
         <table class="w-full timetable_grid">
             <thead>
-                <td class="!w-[unset]"></td>
+
                 {head
                     .map(|(i, (s, e))| {
                         view! {
@@ -155,7 +158,11 @@ pub fn TimetableCell<'a>(
     #[prop(default = true.into(), into)] show_location: MaybeSignal<bool>,
     #[prop(default = true.into(), into)] show_code: MaybeSignal<bool>,
 ) -> impl IntoView {
-    let style = if is_grid { "block" } else { "before:content-['_-_']" };
+    let style = if is_grid {
+        "block"
+    } else {
+        "before:content-['_-_']"
+    };
 
     let bg_color = match class.ctype {
         Type::Lecture { .. } => "dark:bg-red-900 bg-red-200",

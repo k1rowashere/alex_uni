@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-use actix_web::http::header::{HeaderName as H};
+use actix_web::http::header::HeaderName as H;
 
 // Request headers
 pub const HX_REQUEST: H = H::from_static("hx-request");
@@ -207,4 +207,3 @@ macro_rules! common_header {
 }
 
 common_header! { (HxRequest, HX_REQUEST) => [String] }
-
